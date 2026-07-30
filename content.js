@@ -30,8 +30,8 @@
   }
 
   function nsToISO(ns) {
-    // "7/31/2025" -> "2025-07-31"
-    const [m,d,y] = ns.split('/');
+    // "7/31/2025" -> "2025-07-31" (no shift — applied contextually in loadWeek/saveRow)
+    const [m, d, y] = ns.split('/');
     return `${y}-${pad(m)}-${pad(d)}`;
   }
 
@@ -99,43 +99,122 @@
     _defaultItemId = String(d.serviceitemtobedefault || '754');
   }
 
+  // Detected timezone shift between NS server dates and local dates.
+  // Detected dynamically from API responses; defaults to 1 (UTC-3 Buenos Aires).
+  let _dateShift = 1;
+
   async function loadWeek(mondayISO) {
     if (_weekCache[mondayISO]) return _weekCache[mondayISO];
 
-    const weekNS = isoToNS(mondayISO);
-    const raw = await apiFetch(
-      `${HANDLER}&opType=fetch&requestType=time&week=${encodeURIComponent(weekNS)}&employee=${_userId}`
-    );
+    // Shift the week param by _dateShift days to align with NS server's timezone
+    const apiWeekDate = new Date(mondayISO + 'T12:00:00');
+    apiWeekDate.setDate(apiWeekDate.getDate() - _dateShift);
+    const weekNS = `${apiWeekDate.getMonth() + 1}/${apiWeekDate.getDate()}/${apiWeekDate.getFullYear()}`;
+
+    const nextMondayISO = addDays(mondayISO, 7);
+    const apiNextWeekDate = new Date(nextMondayISO + 'T12:00:00');
+    apiNextWeekDate.setDate(apiNextWeekDate.getDate() - _dateShift);
+    const nextWeekNS = `${apiNextWeekDate.getMonth() + 1}/${apiNextWeekDate.getDate()}/${apiNextWeekDate.getFullYear()}`;
+
+    const [raw, rawNext] = await Promise.all([
+      apiFetch(`${HANDLER}&opType=fetch&requestType=time&week=${encodeURIComponent(weekNS)}&employee=${_userId}`),
+      apiFetch(`${HANDLER}&opType=fetch&requestType=time&week=${encodeURIComponent(nextWeekNS)}&employee=${_userId}`),
+    ]);
+
     const data = JSON.parse(raw);
+    const dataNext = JSON.parse(rawNext);
 
-    // Parse projects (only projectsorig = user's assigned ones)
-    _projects = (data.projectsorig || []).map(p => ({
-      id:   p.internalid.split('|')[0],
-      raw:  p.internalid,
-      name: p.display,
-    }));
+    // Merge timeentries from both fetches — next week may contain future entries
+    // for days that fall within the current Mon–Sun display window
+    // Detect the date shift between what we requested and what the API returns.
+    // NS stores dates relative to the server's timezone (US/Pacific UTC-7).
+    // Users in other timezones see an offset: the first date returned by the API
+    // for a given week param may not match the Monday we requested.
+    // We detect this by comparing the first returned date to our mondayISO.
+    function detectShiftAndBuildRows(timeentries, mondayISO) {
+      // Collect all returned date strings across all entries
+      const allApiDates = [];
+      for (const dayArr of Object.values(timeentries)) {
+        for (const dayObj of dayArr) {
+          for (const dateNS of Object.keys(dayObj)) {
+            allApiDates.push(dateNS);
+          }
+        }
+      }
 
-    // Parse tasks — keyed by numeric project id (string)
+      // Find the shift: try offsets -2..+2 and pick the one where the most
+      // dates fall cleanly within a Mon–Sun window around mondayISO
+      let bestShift = 0;
+      let bestCount = -1;
+      for (let shift = -2; shift <= 2; shift++) {
+        let count = 0;
+        for (const ns of allApiDates) {
+          const [m, d, y] = ns.split('/');
+          const date = new Date(`${y}-${pad(m)}-${pad(d)}T12:00:00`);
+          date.setDate(date.getDate() + shift);
+          const iso = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+          const diff = Math.round(
+            (new Date(iso + 'T12:00:00') - new Date(mondayISO + 'T12:00:00')) / 86400000
+          );
+          if (diff >= 0 && diff < 7) count++;
+        }
+        if (count > bestCount) { bestCount = count; bestShift = shift; }
+      }
+
+      return bestShift;
+    }
+
+    const mergedEntries = data.timeentries || {};
+    const shift = Object.keys(mergedEntries).length > 0
+      ? detectShiftAndBuildRows(mergedEntries, mondayISO)
+      : 1; // default +1 for UTC-3 (Buenos Aires) if no entries to detect from
+    _dateShift = shift; // cache for use in saveRow
+    for (const [key, val] of Object.entries(dataNext.timeentries || {})) {
+      if (mergedEntries[key]) {
+        // Same row exists in both — merge the day arrays
+        mergedEntries[key] = [...mergedEntries[key], ...val];
+      } else {
+        mergedEntries[key] = val;
+      }
+    }
+    data.timeentries = mergedEntries;
+
+    // Parse projects — merge both responses (next week may have more assigned projects)
+    const projMap = new Map();
+    for (const p of [...(data.projectsorig || []), ...(dataNext.projectsorig || [])]) {
+      projMap.set(p.internalid.split('|')[0], { id: p.internalid.split('|')[0], raw: p.internalid, name: p.display });
+    }
+    _projects = [...projMap.values()];
+
+    // Parse tasks — merge both responses
     _tasks = {};
-    const rawTasks = data.projecttasksorig || {};
-    for (const [pid, arr] of Object.entries(rawTasks)) {
-      _tasks[pid] = (arr || []).map(t => ({
-        id:   t.internalid.split('|')[0],
-        raw:  t.internalid,
-        name: t.display,
-      }));
+    for (const src of [data, dataNext]) {
+      for (const [pid, arr] of Object.entries(src.projecttasksorig || {})) {
+        if (!_tasks[pid]) _tasks[pid] = [];
+        const existing = new Set(_tasks[pid].map(t => t.id));
+        for (const t of (arr || [])) {
+          const id = t.internalid.split('|')[0];
+          if (!existing.has(id)) {
+            _tasks[pid].push({ id, raw: t.internalid, name: t.display });
+            existing.add(id);
+          }
+        }
+      }
     }
 
     // Parse time entries
-    // key format: "projectId_taskId_extraStuff..."
+    // key format: "projectId_taskId_itemId_..."
     // value: array of { "M/D/YYYY": { internalid, hours, memo, approval, disableLine } }
-    const rows = [];
+    // Multiple keys can share the same projId+taskId (different item) — deduplicate,
+    // keeping whichever has the most valid day entries for this week.
+    const rowMap = new Map(); // key: "projId_taskId"
+
     const entries = data.timeentries || {};
     for (const [key, dayArr] of Object.entries(entries)) {
       const parts = key.split('_');
       const projId = parts[0];
       const taskId = parts[1];
-      const itemId = parts[2] || _defaultItemId;  // key format: projectId_taskId_itemId_...
+      const itemId = parts[2] || _defaultItemId;
 
       const proj = _projects.find(p => p.id === projId);
       const task = (_tasks[projId] || []).find(t => t.id === taskId);
@@ -143,30 +222,45 @@
       const days = {};
       for (const dayObj of dayArr) {
         for (const [dateNS, entry] of Object.entries(dayObj)) {
-          const iso = nsToISO(dateNS);
-          const dk = isoToDayKey(iso);
+          const [m, d, y] = dateNS.split('/');
+          const date = new Date(`${y}-${pad(m)}-${pad(d)}T12:00:00`);
+          date.setDate(date.getDate() + shift);
+          const iso = `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())}`;
+          const diffFromMonday = Math.round(
+            (new Date(iso + 'T12:00:00') - new Date(mondayISO + 'T12:00:00')) / 86400000
+          );
+          if (diffFromMonday < 0 || diffFromMonday >= 7) continue;
+          const dk = DAYS[diffFromMonday];
           if (dk) {
             days[dk] = {
-              hours:    nsToHours(entry.hours),
-              memo:     entry.memo || '',
-              timeid:   entry.internalid || '',
-              approved: entry.approval === 'T',
-              submitted: entry.rejected === '3',  // "submitted" state uses rejected=3
-              disabled: entry.disableLine === true,
+              hours:     nsToHours(entry.hours),
+              memo:      entry.memo || '',
+              timeid:    entry.internalid || '',
+              approved:  entry.approval === 'T',
+              submitted: entry.rejected === '3',
+              disabled:  entry.disableLine === true,
             };
           }
         }
       }
 
-      rows.push({
-        projId, taskId, itemId,
-        projName: proj?.name || projId,
-        taskName: task?.name || taskId,
-        projRaw:  proj?.raw || projId,
-        taskRaw:  task?.raw || taskId,
-        days,
-      });
+      const dedupKey = `${projId}_${taskId}`;
+      const existing = rowMap.get(dedupKey);
+      // Keep the row with more valid day entries; ties go to the first one seen
+      if (!existing || Object.keys(days).length > Object.keys(existing.days).length) {
+        rowMap.set(dedupKey, {
+          projId, taskId, itemId,
+          projName: proj?.name || projId,
+          taskName: task?.name || taskId,
+          projRaw:  proj?.raw || projId,
+          taskRaw:  task?.raw || taskId,
+          days,
+        });
+      }
     }
+
+    // Only include rows that have at least one entry in this week
+    const rows = [...rowMap.values()].filter(r => Object.keys(r.days).length > 0);
 
     const result = { rows, weekStart: mondayISO };
     _weekCache[mondayISO] = result;
@@ -176,20 +270,24 @@
   // Default service item id — comes from init, stored here
   let _defaultItemId = '754';
 
-  async function saveRow({ projId, projRaw, taskId, taskRaw, itemId, weekISO, dayKey, hours, memo, timeid, date }) {
+  async function saveRow({ projId, projRaw, taskId, taskRaw, itemId, weekISO, dayKey, hours, memo, timeid }) {
     // The real payload format (from buildBlockPayload in the NS source):
     // emp, proj (numeric), projtask (numeric), item (numeric), lines[]{day,date,time,memo,timeid}
     const projNumeric  = (projRaw || projId || '').split('|')[0];
     const taskNumeric  = (taskRaw || taskId || '').split('|')[0];
     const itemNumeric  = (itemId || _defaultItemId || '754');
 
-    // Build date string for the target day: "M/D/YYYY"
+    // Compensate for the NS server timezone shift when sending dates.
+    // The server stores dates offset by _dateShift days, so we send (actual - shift).
     const dayIndex = DAYS.indexOf(dayKey);
-    const dayDate  = date || isoToNS(addDays(weekISO, dayIndex));
+    const actualDateISO = addDays(weekISO, dayIndex);
+    const apiDate = new Date(actualDateISO + 'T12:00:00');
+    apiDate.setDate(apiDate.getDate() - _dateShift);
+    const dayDate = `${apiDate.getMonth() + 1}/${apiDate.getDate()}/${apiDate.getFullYear()}`;
 
     const line = {
       day:    dayKey,
-      date:   dayDate,
+      date:   dayDate,   // "M/D/YYYY 12:00:00" — noon prevents UTC midnight shift
       time:   hoursToNS(parseFloat(hours) || 0),
       memo:   memo || '',
       timeid: timeid || '',
@@ -208,23 +306,36 @@
       rate:       '',
       approval:   '',
       nonbillps:  false,
+      weekstart:  isoToNS(weekISO),   // week Monday in M/D/YYYY — server needs this
       lines:      [line],
     };
 
-    const params = new URLSearchParams({ opType: 'saveAll', payLoad: JSON.stringify([block]) });
-    const r = await fetch(HANDLER, {
-      method: 'POST', credentials: 'include',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
+    // Use saveBlock (GET) for single row saves — matches what the NS UI does
+    // saveAll (POST) is only used when saving multiple rows at once
+    const params = new URLSearchParams({
+      opType: 'saveBlock',
+      payLoad: JSON.stringify(block),
+    });
+    console.log('[FastTracker] saveRow payload:', JSON.stringify(block, null, 2));
+    const r = await fetch(`${HANDLER}&${params.toString()}`, {
+      method: 'GET', credentials: 'include',
     });
     const text = await r.text();
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     // Response is either JSON array or a plain error string
     try {
       const arr = JSON.parse(text);
-      for (const item of (Array.isArray(arr) ? arr : [arr])) {
-        if (item.errors && item.errors !== '' && item.errors !== 'Saving success.')
-          throw new Error(item.errors);
+      for (const entry of (Array.isArray(arr) ? arr : [arr])) {
+        if (entry.errors && entry.errors !== '' && entry.errors !== 'Saving success.')
+          throw new Error(entry.errors);
+        // Detect if server saved to a different day than intended
+        if (entry.created) {
+          for (const c of entry.created) {
+            if (c.day && c.day !== dayKey) {
+              console.warn(`[FastTracker] Server saved to "${c.day}" but sent "${dayKey}" (date: ${dayDate}). Check weekstart/date alignment.`);
+            }
+          }
+        }
       }
     } catch(e) {
       // If JSON.parse itself failed, the response IS the error message
@@ -558,17 +669,15 @@
       const dk     = input.dataset.day;
       const week   = input.dataset.week;
       const timeid = input.dataset.timeid;
-      const date   = input.dataset.date;
       const itemId = input.dataset.item;
 
-      // Find raw IDs
-      const projRaw = _projects.find(p=>p.id===proj)?.raw || proj;
-      const taskRaw = (_tasks[proj]||[]).find(t=>t.id===task)?.raw || task;
+      const projRaw = _projects.find(p => p.id === proj)?.raw || proj;
+      const taskRaw = (_tasks[proj] || []).find(t => t.id === task)?.raw || task;
 
       input.style.opacity = '0.5';
       try {
         await saveRow({ projId: proj, projRaw, taskId: task, taskRaw, itemId,
-                        weekISO: week, dayKey: dk, date,
+                        weekISO: week, dayKey: dk,
                         hours: hours || 0, memo: '', timeid });
         input.value = hours ? formatHours(hours) : '';
         input.dataset.prev = input.value;
