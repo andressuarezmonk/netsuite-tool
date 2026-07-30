@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "NetSuite Fast Time Tracker",
+  "version": "1.0.0",
+  "description": "Fast time entry for NetSuite — no more waiting for the slow page",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://*.netsuite.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.netsuite.com/app/site/hosting/scriptlet.nl*"
+      ],
+      "js": ["content.js"],
+      "css": ["style.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
