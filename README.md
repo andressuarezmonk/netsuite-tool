@@ -1,62 +1,61 @@
 # NetSuite Fast Time Tracker
 
-A Chrome extension that replaces the slow NetSuite time entry page with an instant local form. No page load wait, no spinners — just fill in your hours and submit.
+A Chrome extension that replaces the slow NetSuite Weekly Time Entry page with a fast React UI.
+
+## Setup
+
+```bash
+npm install
+```
+
+## Development
+
+```bash
+npm run dev   # watch mode — rebuilds on every save
+```
+
+Then in Chrome:
+1. Go to `chrome://extensions`
+2. Enable **Developer mode**
+3. Click **Load unpacked** → select the **`dist/`** folder
+4. After any code change, click the refresh icon on the extension
+
+## Build
+
+```bash
+npm run build
+```
+
+## Project structure
+
+```
+src/
+  lib/
+    api.ts         # All NetSuite API calls (loadInit, loadWeek, saveRow)
+    dates.ts       # Date helpers + timezone shift detection
+    types.ts       # TypeScript interfaces
+    constants.ts   # HANDLER URL, DAYS array, etc.
+  content/
+    index.tsx      # Extension entry — mounts React into Shadow DOM
+    App.tsx        # Root component + state management
+    App.css        # All styles (scoped via Shadow DOM)
+    components/
+      WeekGrid.tsx  # Weekly table with editable cells
+      WeekNav.tsx   # Prev/next/today navigation
+      AddRowBar.tsx # Add a new project/task row
+      StatusBar.tsx # Loading/success/error feedback
+  popup/
+    popup.html     # Extension toolbar popup shell
+    index.tsx      # Popup entry point
+    PopupApp.tsx   # Popup UI
+  background.ts    # Service worker stub
+dist/              # Built output — load this folder as the extension
+icons/             # Extension icons
+```
 
 ## How it works
 
-- When you navigate to the NetSuite time entry scriptlet URL, the extension intercepts the page load and immediately shows a fast local form
-- The form submits directly to NetSuite's REST API using your existing browser session (no separate login or cookie needed)
-- A popup is also available from the Chrome toolbar for quick entry from any tab
-
-## Install (Chrome / Edge)
-
-1. Open Chrome and go to `chrome://extensions`
-2. Enable **Developer mode** (top-right toggle)
-3. Click **Load unpacked**
-4. Select the `netsuite` folder (this directory)
-5. The extension is now active
-
-## First use
-
-Navigate to your NetSuite time entry URL as usual:
-```
-https://3851137.app.netsuite.com/app/site/hosting/scriptlet.nl?script=2375&deploy=1...
-```
-
-Instead of the slow page, you'll see the fast form instantly. Log your hours and hit **Log Time**.
-
-If the project/task dropdowns fail to load (depends on your NS role/permissions), they fall back to plain text inputs where you can type the internal NetSuite IDs.
-
-## Fallback
-
-Click **Load original page** in the fast form to bypass the extension and load the real NetSuite page for that tab.
-
-## Troubleshooting
-
-**Projects not loading**
-Your NetSuite role may not have REST API access enabled. Ask your NetSuite admin to enable "REST Web Services" for your role, or use the text field fallback to enter project IDs manually.
-
-**Time entry fails with 403**
-Same — REST API needs to be enabled for your role.
-
-**Time entry fails with field errors**
-NetSuite's `timebill` record type field names can vary by account configuration. Open DevTools on the fast form page, check the error response body, and open an issue with the field names shown.
-
-## Adapting field names
-
-If your NetSuite account uses different field names, edit the payload in `content.js` around the `fetch('/services/rest/record/v1/timebill', ...)` call. You can find the exact field names by:
-
-1. Loading the original slow page once
-2. DevTools → Network → submit a time entry
-3. Look at the POST request payload
-
-## Files
-
-```
-manifest.json     Extension manifest
-content.js        Intercepts the NS page and injects the fast form
-popup.html/js     Toolbar popup for quick entry from any tab
-background.js     Service worker (proxies fetch for the popup)
-style.css         Minimal shared styles
-icons/            Extension icons
-```
+- Intercepts `script=2375` (the slow time entry scriptlet) and replaces the page with a React app
+- Fetches data from `script=2373` (the real NS data handler) using your existing browser session
+- Auto-detects your timezone offset vs the NS server to correctly map API dates to display dates
+- Saves via `saveBlock` GET requests, same as the original NS UI
