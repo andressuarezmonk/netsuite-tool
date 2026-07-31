@@ -137,7 +137,21 @@ td.ft-col-total { text-align: center; font-weight: 700; }
 .ft-day-input.ft-has-value { border-color: #9ab8e8; background: #f0f6ff; }
 .ft-day-input.ft-saving    { opacity: .5; }
 
-/* Footer totals */
+/* Delete column */
+.ft-col-del { width: 28px; text-align: center; }
+.ft-del-btn {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color .15s, background .15s;
+}
+.ft-del-btn:hover:not(:disabled) { color: #c0392b; background: #fdecea; }
+.ft-del-btn:disabled { cursor: not-allowed; opacity: 0.35; }
 .ft-table tfoot td {
   padding: 8px 10px;
   font-weight: 700;

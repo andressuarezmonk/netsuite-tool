@@ -151,7 +151,25 @@ export async function loadWeek(mondayISO: string): Promise<WeekData> {
   return { rows, weekStart: mondayISO };
 }
 
-// ── Save ─────────────────────────────────────────────────────────────────────
+// ── Delete ────────────────────────────────────────────────────────────────────
+
+/** Delete all time records for a row (pass all timeid values from its days). */
+export async function deleteRow(timeids: string[]): Promise<void> {
+  // Filter out empty timeids (days with no saved record)
+  const ids = timeids.filter(id => id.trim() !== '');
+  if (ids.length === 0) return; // nothing saved yet — just remove from UI
+
+  const params = new URLSearchParams({
+    opType:  'deleteRecords',
+    payLoad: JSON.stringify(ids),
+  });
+  const r = await fetch(`${getHandler()}&${params.toString()}`, {
+    method:      'GET',
+    credentials: 'include',
+  });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  // deleteRecords returns an empty body or {} on success — no further check needed
+}
 
 export async function saveRow(params: SaveRowParams): Promise<void> {
   const { projRaw, taskRaw, itemId, weekISO, dayKey, hours, memo, timeid } = params;

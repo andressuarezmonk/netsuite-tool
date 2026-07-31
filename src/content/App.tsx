@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useReducer, useRef } from 'react';
 import { DAYS } from '@/lib/constants';
 import { addDays, getMondayISO, todayISO, weekRangeLabel } from '@/lib/dates';
-import { loadInit, loadWeek, saveRow } from '@/lib/api';
+import { loadInit, loadWeek, saveRow, deleteRow } from '@/lib/api';
 import { getCached, setCached, evictOldWeeks } from '@/lib/cache';
 import { mergeWeekData } from '@/lib/merge';
 import { WeekData, TimeRow } from '@/lib/types';
@@ -27,7 +27,8 @@ type Action =
   | { type: 'CLEAR_STATUS' }
   | { type: 'SET_REFRESHING'; value: boolean }
   | { type: 'INITIALIZED' }
-  | { type: 'ADD_ROW'; row: TimeRow };
+  | { type: 'ADD_ROW'; row: TimeRow }
+  | { type: 'REMOVE_ROW'; projId: string; taskId: string };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -48,6 +49,17 @@ function reducer(state: State, action: Action): State {
       return {
         ...state,
         weekData: { ...state.weekData, rows: [...state.weekData.rows, action.row] },
+      };
+    case 'REMOVE_ROW':
+      if (!state.weekData) return state;
+      return {
+        ...state,
+        weekData: {
+          ...state.weekData,
+          rows: state.weekData.rows.filter(
+            r => !(r.projId === action.projId && r.taskId === action.taskId),
+          ),
+        },
       };
     default:
       return state;
@@ -208,6 +220,26 @@ export default function App() {
     }
   }, [state.weekISO, setStatus]);
 
+  const handleDelete = useCallback(async (row: TimeRow) => {
+    const timeids = DAYS.map(dk => row.days[dk]?.timeid ?? '');
+    try {
+      // Remove from UI immediately — don't wait for the server round-trip
+      dispatch({ type: 'REMOVE_ROW', projId: row.projId, taskId: row.taskId });
+      await deleteRow(timeids);
+      setStatus('✓ Row deleted', 'success');
+      // Refresh cache in background without touching the UI again
+      const fresh = await loadWeek(state.weekISO);
+      await setCached(state.weekISO, fresh);
+    } catch (err) {
+      // Restore the row on failure by reloading from server
+      setStatus(`Delete failed: ${(err as Error).message}`, 'error');
+      const fresh = await loadWeek(state.weekISO);
+      await setCached(state.weekISO, fresh);
+      const merged = mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current);
+      dispatch({ type: 'SET_DATA', data: merged });
+    }
+  }, [state.weekISO, setStatus]);
+
   const handleAddRow = useCallback((row: TimeRow) => {
     dispatch({ type: 'ADD_ROW', row });
   }, []);
@@ -242,6 +274,7 @@ export default function App() {
         weekData={state.weekData}
         weekISO={state.weekISO}
         onSave={handleSave}
+        onDelete={handleDelete}
       />
 
       {state.initialized && (
