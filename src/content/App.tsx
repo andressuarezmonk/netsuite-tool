@@ -67,6 +67,8 @@ export default function App() {
   const currentWeekDataRef = useRef<WeekData | null>(null);
   // Tracks unsaved local edits: "projId_taskId_dayKey" -> hours typed by user
   const localEditsRef = useRef<Map<string, number>>(new Map());
+  // Tracks which week the user is currently viewing — fetches for other weeks are discarded
+  const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -89,12 +91,16 @@ export default function App() {
    *    approved cells always take the fresh (server-authoritative) value
    */
   const loadWeekWithCache = useCallback(async (mondayISO: string) => {
-    localEditsRef.current = new Map(); // reset local edits on navigation
+    // Mark this as the active week immediately
+    activeWeekRef.current = mondayISO;
+    localEditsRef.current = new Map();
 
     const cached = await getCached(mondayISO);
 
+    // Bail if the user already navigated away while we were reading the cache
+    if (activeWeekRef.current !== mondayISO) return;
+
     if (cached) {
-      // Show cache immediately, mark as refreshing
       dispatch({ type: 'SET_DATA', data: cached, refreshing: true });
       dispatch({ type: 'CLEAR_STATUS' });
     } else {
@@ -103,9 +109,16 @@ export default function App() {
 
     try {
       const fresh = await loadWeek(mondayISO);
+
+      // Bail if user navigated away while the fetch was in flight
+      if (activeWeekRef.current !== mondayISO) {
+        // Still update the cache silently so the data is ready next time
+        await setCached(mondayISO, fresh);
+        return;
+      }
+
       await setCached(mondayISO, fresh);
 
-      // Merge fresh into whatever is currently displayed
       const displayed = currentWeekDataRef.current;
       const merged = displayed
         ? mergeWeekData(displayed, fresh, localEditsRef.current)
@@ -114,10 +127,10 @@ export default function App() {
       dispatch({ type: 'SET_DATA', data: merged, refreshing: false });
       dispatch({ type: 'CLEAR_STATUS' });
     } catch (err) {
+      if (activeWeekRef.current !== mondayISO) return; // navigated away, discard error
       if (!cached) {
         setStatus(`Error loading week: ${(err as Error).message}`, 'error');
       } else {
-        // Cache is shown — just note the refresh failed quietly
         setStatus(`⚠ Background refresh failed`, 'error');
         dispatch({ type: 'SET_REFRESHING', value: false });
       }
@@ -140,6 +153,7 @@ export default function App() {
   }, []);
 
   const navigate = useCallback((mondayISO: string) => {
+    activeWeekRef.current = mondayISO; // mark immediately so in-flight fetches are discarded
     dispatch({ type: 'SET_WEEK', weekISO: mondayISO });
     loadWeekWithCache(mondayISO);
   }, [loadWeekWithCache]);
