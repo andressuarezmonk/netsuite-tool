@@ -125,7 +125,8 @@ export async function loadWeek(mondayISO: string): Promise<WeekData> {
             memo:      (entry.memo as string) ?? '',
             timeid:    (entry.internalid as string) ?? '',
             approved:  entry.approval === 'T',
-            submitted: entry.rejected === '3',
+            // "rejected=3" means submitted/pending; only flag as submitted if not already approved
+            submitted: entry.approval !== 'T' && entry.rejected === '3',
             disabled:  entry.disableLine === true,
           };
         }
