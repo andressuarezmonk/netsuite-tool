@@ -9,22 +9,21 @@ import { getNSBaseUrl } from '@/lib/constants';
 import WeekGrid from './components/WeekGrid';
 import WeekNav from './components/WeekNav';
 import AddRowBar from './components/AddRowBar';
-import StatusBar from './components/StatusBar';
+import StatusBar, { StatusEntry, StatusKind } from './components/StatusBar';
 
 interface State {
   weekISO: string;
   weekData: WeekData | null;
-  /** True while a background fetch is in-flight (cached data is being shown) */
   refreshing: boolean;
-  status: { msg: string; type: 'loading' | 'success' | 'error' | '' };
+  statuses: Record<string, StatusEntry>; // keyed by id for independent control
   initialized: boolean;
 }
 
 type Action =
   | { type: 'SET_WEEK'; weekISO: string }
   | { type: 'SET_DATA'; data: WeekData; refreshing?: boolean }
-  | { type: 'SET_STATUS'; msg: string; kind: State['status']['type'] }
-  | { type: 'CLEAR_STATUS' }
+  | { type: 'SET_STATUS'; entry: StatusEntry }
+  | { type: 'CLEAR_STATUS'; id: string }
   | { type: 'SET_REFRESHING'; value: boolean }
   | { type: 'INITIALIZED' }
   | { type: 'ADD_ROW'; row: TimeRow }
@@ -36,20 +35,21 @@ function reducer(state: State, action: Action): State {
       return { ...state, weekISO: action.weekISO, weekData: null, refreshing: false };
     case 'SET_DATA':
       return { ...state, weekData: action.data, refreshing: action.refreshing ?? false };
-    case 'SET_STATUS':
-      return { ...state, status: { msg: action.msg, type: action.kind } };
-    case 'CLEAR_STATUS':
-      return { ...state, status: { msg: '', type: '' } };
+    case 'SET_STATUS': {
+      return { ...state, statuses: { ...state.statuses, [action.entry.id]: action.entry } };
+    }
+    case 'CLEAR_STATUS': {
+      const next = { ...state.statuses };
+      delete next[action.id];
+      return { ...state, statuses: next };
+    }
     case 'SET_REFRESHING':
       return { ...state, refreshing: action.value };
     case 'INITIALIZED':
       return { ...state, initialized: true };
     case 'ADD_ROW':
       if (!state.weekData) return state;
-      return {
-        ...state,
-        weekData: { ...state.weekData, rows: [...state.weekData.rows, action.row] },
-      };
+      return { ...state, weekData: { ...state.weekData, rows: [...state.weekData.rows, action.row] } };
     case 'REMOVE_ROW':
       if (!state.weekData) return state;
       return {
@@ -71,29 +71,29 @@ export default function App() {
     weekISO: getMondayISO(todayISO()),
     weekData: null,
     refreshing: false,
-    status: { msg: 'Initializing…', type: 'loading' },
+    statuses: { init: { id: 'init', msg: 'Initializing…', kind: 'fetch' } },
     initialized: false,
   });
 
   const statusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Tracks the currently displayed WeekData so background merges can access it
   const currentWeekDataRef = useRef<WeekData | null>(null);
-  // Tracks unsaved local edits: "projId_taskId_dayKey" -> hours typed by user
   const localEditsRef = useRef<Map<string, number>>(new Map());
-  // Tracks which week the user is currently viewing — fetches for other weeks are discarded
   const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
 
-  // Keep ref in sync with state
-  useEffect(() => {
-    currentWeekDataRef.current = state.weekData;
-  }, [state.weekData]);
+  useEffect(() => { currentWeekDataRef.current = state.weekData; }, [state.weekData]);
 
-  const setStatus = useCallback((msg: string, kind: State['status']['type']) => {
+  const setStatus = useCallback((id: string, msg: string, kind: StatusKind) => {
+    dispatch({ type: 'SET_STATUS', entry: { id, msg, kind } });
+  }, []);
+
+  const clearStatus = useCallback((id: string) => {
+    dispatch({ type: 'CLEAR_STATUS', id });
+  }, []);
+
+  const setTransientStatus = useCallback((id: string, msg: string, kind: StatusKind, ms = 2500) => {
+    dispatch({ type: 'SET_STATUS', entry: { id, msg, kind } });
     if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
-    dispatch({ type: 'SET_STATUS', msg, kind });
-    if (kind === 'success') {
-      statusTimerRef.current = setTimeout(() => dispatch({ type: 'CLEAR_STATUS' }), 2500);
-    }
+    statusTimerRef.current = setTimeout(() => dispatch({ type: 'CLEAR_STATUS', id }), ms);
   }, []);
 
   /**
@@ -104,62 +104,54 @@ export default function App() {
    *    approved cells always take the fresh (server-authoritative) value
    */
   const loadWeekWithCache = useCallback(async (mondayISO: string) => {
-    // Mark this as the active week immediately
     activeWeekRef.current = mondayISO;
     localEditsRef.current = new Map();
 
     const cached = await getCached(mondayISO);
-
-    // Bail if the user already navigated away while we were reading the cache
     if (activeWeekRef.current !== mondayISO) return;
 
     if (cached) {
       dispatch({ type: 'SET_DATA', data: cached, refreshing: true });
-      dispatch({ type: 'CLEAR_STATUS' });
+      setStatus('cache', 'Loaded from cache — refreshing…', 'cache');
     } else {
-      setStatus('Loading…', 'loading');
+      setStatus('fetch', 'Loading week data…', 'fetch');
     }
 
     try {
       const fresh = await loadWeek(mondayISO);
-
-      // Bail if user navigated away while the fetch was in flight
       if (activeWeekRef.current !== mondayISO) {
-        // Still update the cache silently so the data is ready next time
         await setCached(mondayISO, fresh);
         return;
       }
-
       await setCached(mondayISO, fresh);
-
       const displayed = currentWeekDataRef.current;
       const merged = displayed
         ? mergeWeekData(displayed, fresh, localEditsRef.current)
         : fresh;
-
       dispatch({ type: 'SET_DATA', data: merged, refreshing: false });
-      dispatch({ type: 'CLEAR_STATUS' });
+      clearStatus('cache');
+      clearStatus('fetch');
     } catch (err) {
-      if (activeWeekRef.current !== mondayISO) return; // navigated away, discard error
+      if (activeWeekRef.current !== mondayISO) return;
       if (!cached) {
-        setStatus(`Error loading week: ${(err as Error).message}`, 'error');
+        setStatus('fetch', `Failed to load: ${(err as Error).message}`, 'error');
       } else {
-        setStatus(`⚠ Background refresh failed`, 'error');
+        setStatus('cache', `⚠ Refresh failed`, 'error');
         dispatch({ type: 'SET_REFRESHING', value: false });
       }
     }
-  }, [setStatus]);
+  }, [setStatus, clearStatus]);
 
-  // Initialize on mount
   useEffect(() => {
     (async () => {
       try {
-        evictOldWeeks(); // background cleanup, fire-and-forget
+        evictOldWeeks();
         await loadInit();
         dispatch({ type: 'INITIALIZED' });
+        clearStatus('init');
         await loadWeekWithCache(state.weekISO);
       } catch (err) {
-        setStatus(`Init failed: ${(err as Error).message}`, 'error');
+        setStatus('init', `Init failed: ${(err as Error).message}`, 'error');
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -172,73 +164,50 @@ export default function App() {
   }, [loadWeekWithCache]);
 
   const handleSave = useCallback(async (
-    row: TimeRow,
-    dayKey: typeof DAYS[number],
-    hours: number,
-    memo: string,
+    row: TimeRow, dayKey: typeof DAYS[number], hours: number, memo: string,
   ) => {
     const editKey = `${row.projId}_${row.taskId}_${dayKey}`;
+    if (hours > 0) localEditsRef.current.set(editKey, hours);
+    else localEditsRef.current.delete(editKey);
 
-    // Track local edit so a concurrent background refresh won't overwrite it
-    if (hours > 0) {
-      localEditsRef.current.set(editKey, hours);
-    } else {
-      localEditsRef.current.delete(editKey);
-    }
-
+    setStatus('mutation', 'Saving…', 'mutation');
     try {
       await saveRow({
-        projId:  row.projId,
-        projRaw: row.projRaw,
-        taskId:  row.taskId,
-        taskRaw: row.taskRaw,
-        itemId:  row.itemId,
-        weekISO: state.weekISO,
-        dayKey,
-        hours,
-        memo,
-        timeid: row.days[dayKey]?.timeid ?? '',
+        projId: row.projId, projRaw: row.projRaw,
+        taskId: row.taskId, taskRaw: row.taskRaw,
+        itemId: row.itemId, weekISO: state.weekISO,
+        dayKey, hours, memo, timeid: row.days[dayKey]?.timeid ?? '',
       });
-
-      setStatus('✓ Saved', 'success');
-
-      // Save committed — clear the local edit and refresh from server
       localEditsRef.current.delete(editKey);
+      setTransientStatus('mutation', '✓ Saved', 'success');
       const fresh = await loadWeek(state.weekISO);
       await setCached(state.weekISO, fresh);
-
-      const merged = mergeWeekData(
-        currentWeekDataRef.current ?? fresh,
-        fresh,
-        localEditsRef.current,
-      );
+      const merged = mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current);
       dispatch({ type: 'SET_DATA', data: merged });
     } catch (err) {
       localEditsRef.current.delete(editKey);
-      setStatus(`Save failed: ${(err as Error).message}`, 'error');
-      throw err; // let WeekGrid revert the cell
+      setTransientStatus('mutation', `Save failed: ${(err as Error).message}`, 'error');
+      throw err;
     }
-  }, [state.weekISO, setStatus]);
+  }, [state.weekISO, setStatus, setTransientStatus]);
 
   const handleDelete = useCallback(async (row: TimeRow) => {
     const timeids = DAYS.map(dk => row.days[dk]?.timeid ?? '');
+    setStatus('mutation', 'Deleting…', 'mutation');
     try {
-      // Remove from UI immediately — don't wait for the server round-trip
       dispatch({ type: 'REMOVE_ROW', projId: row.projId, taskId: row.taskId });
       await deleteRow(timeids);
-      setStatus('✓ Row deleted', 'success');
-      // Refresh cache in background without touching the UI again
+      setTransientStatus('mutation', '✓ Row deleted', 'success');
       const fresh = await loadWeek(state.weekISO);
       await setCached(state.weekISO, fresh);
     } catch (err) {
-      // Restore the row on failure by reloading from server
-      setStatus(`Delete failed: ${(err as Error).message}`, 'error');
+      setTransientStatus('mutation', `Delete failed: ${(err as Error).message}`, 'error');
       const fresh = await loadWeek(state.weekISO);
       await setCached(state.weekISO, fresh);
       const merged = mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current);
       dispatch({ type: 'SET_DATA', data: merged });
     }
-  }, [state.weekISO, setStatus]);
+  }, [state.weekISO, setStatus, setTransientStatus]);
 
   const handleAddRow = useCallback((row: TimeRow) => {
     dispatch({ type: 'ADD_ROW', row });
@@ -268,7 +237,7 @@ export default function App() {
         refreshing={state.refreshing}
       />
 
-      <StatusBar msg={state.status.msg} type={state.status.type} />
+      <StatusBar statuses={Object.values(state.statuses)} />
 
       <WeekGrid
         weekData={state.weekData}
