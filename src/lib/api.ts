@@ -1,4 +1,4 @@
-import { HANDLER, DAYS } from './constants';
+import { getHandler, getNSBaseUrl, DAYS } from './constants';
 import {
   addDays, hoursToNS, nsToHours, toApiDate, fromApiDate,
   dayIndexFromMonday, dayKeyFromIndex,
@@ -33,7 +33,7 @@ async function apiFetch(url: string): Promise<string> {
 // ── Init ─────────────────────────────────────────────────────────────────────
 
 export async function loadInit(): Promise<void> {
-  const raw = await apiFetch(`${HANDLER}&requestType=init&opType=fetch`);
+  const raw = await apiFetch(`${getHandler()}&requestType=init&opType=fetch`);
   const d = JSON.parse(raw.substring(0, raw.lastIndexOf('}') + 1));
   _userId = String(d.userid ?? '');
   _defaultItemId = String(d.serviceitemtobedefault ?? '754');
@@ -53,9 +53,9 @@ export async function loadWeek(mondayISO: string): Promise<WeekData> {
   const nextWeekNS  = toApiDate(nextMondayISO, DATE_SHIFT);
 
   const [raw, rawOvlp, rawNext] = await Promise.all([
-    apiFetch(`${HANDLER}&opType=fetch&requestType=time&week=${encodeURIComponent(weekNS)}&employee=${_userId}`),
-    apiFetch(`${HANDLER}&opType=fetch&requestType=time&week=${encodeURIComponent(weekNSOvlp)}&employee=${_userId}`),
-    apiFetch(`${HANDLER}&opType=fetch&requestType=time&week=${encodeURIComponent(nextWeekNS)}&employee=${_userId}`),
+    apiFetch(`${getHandler()}&opType=fetch&requestType=time&week=${encodeURIComponent(weekNS)}&employee=${_userId}`),
+    apiFetch(`${getHandler()}&opType=fetch&requestType=time&week=${encodeURIComponent(weekNSOvlp)}&employee=${_userId}`),
+    apiFetch(`${getHandler()}&opType=fetch&requestType=time&week=${encodeURIComponent(nextWeekNS)}&employee=${_userId}`),
   ]);
 
   const data     = JSON.parse(raw);
@@ -187,7 +187,7 @@ export async function saveRow(params: SaveRowParams): Promise<void> {
   };
 
   const params_ = new URLSearchParams({ opType: 'saveBlock', payLoad: JSON.stringify(block) });
-  const r = await fetch(`${HANDLER}&${params_.toString()}`, {
+  const r = await fetch(`${getHandler()}&${params_.toString()}`, {
     method: 'GET',
     credentials: 'include',
   });

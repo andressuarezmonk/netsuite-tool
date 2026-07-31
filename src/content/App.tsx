@@ -5,6 +5,7 @@ import { loadInit, loadWeek, saveRow } from '@/lib/api';
 import { getCached, setCached, evictOldWeeks } from '@/lib/cache';
 import { mergeWeekData } from '@/lib/merge';
 import { WeekData, TimeRow } from '@/lib/types';
+import { getNSBaseUrl } from '@/lib/constants';
 import WeekGrid from './components/WeekGrid';
 import WeekNav from './components/WeekNav';
 import AddRowBar from './components/AddRowBar';
@@ -216,7 +217,7 @@ export default function App() {
       <header className="ft-header">
         <div>
           <h1>⏱ Weekly Time Entry</h1>
-          <p className="ft-subtitle">Media.Monks — fast entry</p>
+          <p className="ft-subtitle">NetSuite — fast entry</p>
         </div>
         <button className="ft-link-btn" onClick={() => {
           sessionStorage.setItem('ft_bypass', '1');
@@ -249,7 +250,7 @@ export default function App() {
 
       <footer className="ft-footer">
         Fast Time Tracker ·{' '}
-        <a href="https://3851137.app.netsuite.com">NetSuite Home</a>
+        <a href={getNSBaseUrl()}>NetSuite Home</a>
       </footer>
     </div>
   );
