@@ -159,24 +159,24 @@ export async function saveRow(params: SaveRowParams): Promise<void> {
   const projNumeric = projRaw.split('|')[0];
   const taskNumeric = taskRaw.split('|')[0];
   const dayIndex = DAYS.indexOf(dayKey);
+
+  // Send the actual display date — the NS server takes the real date directly.
+  // No DATE_SHIFT applied on save (shift is only for reading API responses).
   const actualDateISO = addDays(weekISO, dayIndex);
-  // Subtract DATE_SHIFT so the server stores the correct date
-  const dayDate = toApiDate(actualDateISO, DATE_SHIFT);
+  const [y, m, d] = actualDateISO.split('-');
+  const dayDate = `${parseInt(m)}/${parseInt(d)}/${y}`;
 
   const block = {
-    blockid:    `ft_${Date.now()}`,
     emp:        _userId,
     proj:       projNumeric,
     projtask:   taskNumeric,
     item:       itemId || _defaultItemId,
     isbillable: false,
-    class:      '',
-    location:   '',
-    department: '',
-    rate:       '',
-    approval:   '',
-    nonbillps:  false,
-    weekstart:  toApiDate(weekISO, DATE_SHIFT),
+    class:      null,
+    location:   null,
+    department: null,
+    rate:       '1.00',
+    blockid:    1,
     lines: [{
       day:    dayKey,
       date:   dayDate,
@@ -186,10 +186,16 @@ export async function saveRow(params: SaveRowParams): Promise<void> {
     }],
   };
 
-  const params_ = new URLSearchParams({ opType: 'saveBlock', payLoad: JSON.stringify(block) });
-  const r = await fetch(`${getHandler()}&${params_.toString()}`, {
-    method: 'GET',
+  // Use saveAll with an array payload — matches exactly what the original NS tool sends
+  const params_ = new URLSearchParams({
+    opType:   'saveAll',
+    payLoad:  JSON.stringify([block]),
+  });
+  const r = await fetch(`${getHandler()}`, {
+    method:      'POST',
     credentials: 'include',
+    headers:     { 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+    body:        params_.toString(),
   });
 
   const text = await r.text();
@@ -198,10 +204,19 @@ export async function saveRow(params: SaveRowParams): Promise<void> {
   try {
     const resp = JSON.parse(text);
     const items = Array.isArray(resp) ? resp : [resp];
+    let anySaved = false;
     for (const item of items) {
       if (item.errors && item.errors !== '' && item.errors !== 'Saving success.') {
         throw new Error(item.errors as string);
       }
+      // Verify the server actually created or updated the record
+      if ((item.created && item.created.length > 0) ||
+          (item.updated && item.updated.length > 0)) {
+        anySaved = true;
+      }
+    }
+    if (!anySaved) {
+      throw new Error('Server accepted the request but did not save the record. Please try again.');
     }
   } catch (e) {
     if (e instanceof SyntaxError) throw new Error(text.substring(0, 200));
