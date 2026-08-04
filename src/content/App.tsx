@@ -27,7 +27,7 @@ type Action =
   | { type: 'SET_REFRESHING'; value: boolean }
   | { type: 'INITIALIZED' }
   | { type: 'ADD_ROW'; row: TimeRow }
-  | { type: 'REMOVE_ROW'; projId: string; taskId: string };
+  | { type: 'REMOVE_ROW'; rowKey: string };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -55,9 +55,7 @@ function reducer(state: State, action: Action): State {
         ...state,
         weekData: {
           ...state.weekData,
-          rows: state.weekData.rows.filter(
-            r => !(r.projId === action.projId && r.taskId === action.taskId),
-          ),
+          rows: state.weekData.rows.filter(r => r.rowKey !== action.rowKey),
         },
       };
     default: return state;
@@ -173,7 +171,7 @@ export default function App() {
     const timeids = DAYS.map(dk => row.days[dk]?.timeid ?? '');
     setStatus('mutation', 'Deleting…', 'mutation');
     try {
-      dispatch({ type: 'REMOVE_ROW', projId: row.projId, taskId: row.taskId });
+      dispatch({ type: 'REMOVE_ROW', rowKey: row.rowKey });
       await deleteRow(timeids);
       setTransientStatus('mutation', '✓ Row deleted', 'success');
       const fresh = await loadWeek(state.weekISO);

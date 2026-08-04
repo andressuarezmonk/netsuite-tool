@@ -37,6 +37,7 @@ export default function AddRowBar({ onAdd }: Props) {
   const handleAdd = () => {
     if (!canAdd) return;
     onAdd({
+      rowKey: `new_${Date.now()}`, // eslint-disable-line
       projId, taskId,
       itemId:   '754',
       projName: proj?.name ?? projId,

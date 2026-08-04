@@ -10,6 +10,7 @@ export interface DayEntry {
 }
 
 export interface TimeRow {
+  rowKey: string;  // full API key: "projId_taskId_itemId_..." — unique per row
   projId: string;
   taskId: string;
   itemId: string;

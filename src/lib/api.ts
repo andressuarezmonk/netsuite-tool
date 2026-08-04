@@ -160,13 +160,18 @@ export async function loadWeek(mondayISO: string): Promise<WeekData> {
       }
     }
 
-    const dedupKey = `${projId}_${taskId}`;
-    const existing = rowMap.get(dedupKey);
+    // Use the full API key as the unique row identifier — same project+task
+    // can appear multiple times (e.g. users duplicate rows to work around
+    // approved entries). Only deduplicate when the EXACT same key appears
+    // in multiple fetches (primary / overlap / next-week), keeping the
+    // version with the most valid day entries.
+    const existing = rowMap.get(key);
     if (
       !existing ||
       Object.keys(days).length > Object.keys(existing.days).length
     ) {
-      rowMap.set(dedupKey, {
+      rowMap.set(key, {
+        rowKey: key,
         projId,
         taskId,
         itemId,

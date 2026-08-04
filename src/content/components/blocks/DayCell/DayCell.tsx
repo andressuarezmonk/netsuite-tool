@@ -5,11 +5,11 @@ import s from './DayCell.module.scss';
 
 export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
   const entry = row.days[dayKey];
-  const [value, setValue]   = useState(entry?.hours != null ? formatHours(entry.hours) : '');
+  const [value, setValue]   = useState(entry?.hours !== undefined ? formatHours(entry.hours) : '');
   const [saving, setSaving] = useState(false);
   const prevRef = useRef(value);
 
-  const freshVal = entry?.hours != null ? formatHours(entry.hours) : '';
+  const freshVal = entry?.hours !== undefined ? formatHours(entry.hours) : '';
   useEffect(() => {
     if (freshVal !== prevRef.current && !saving) {
       setValue(freshVal);
@@ -36,7 +36,7 @@ export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
     setSaving(true);
     try {
       await onSave(row, dayKey, hours, entry?.memo ?? '');
-      const newVal = hours != null ? formatHours(hours) : '';
+      const newVal = hours !== undefined ? formatHours(hours) : '';
       setValue(newVal);
       prevRef.current = newVal;
     } catch {
@@ -52,7 +52,7 @@ export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
     s.input,
     entry?.approved  ? s.inputApproved  : '',
     entry?.submitted ? s.inputSubmitted : '',
-    !disabled && entry?.hours != null ? s.inputHasValue : '',
+    !disabled && entry?.hours !== undefined ? s.inputHasValue : '',
     saving ? s.inputSaving : '',
   ].filter(Boolean).join(' ');
 

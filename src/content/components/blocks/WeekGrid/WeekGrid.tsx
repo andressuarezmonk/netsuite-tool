@@ -53,7 +53,7 @@ export default function WeekGrid({ weekData, weekISO, onSave, onDelete }: Props)
           ) : (
             weekData.rows.map(row => (
               <TimeRow
-                key={`${row.projId}_${row.taskId}`}
+                key={row.rowKey}
                 row={row}
                 dayDates={dayDates}
                 today={today}

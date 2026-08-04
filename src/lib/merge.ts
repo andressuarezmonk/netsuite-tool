@@ -22,21 +22,23 @@ export function mergeWeekData(
   localEdits: Map<string, number>,
 ): WeekData {
   const freshRowMap = new Map(
-    fresh.rows.map((r) => [`${r.projId}_${r.taskId}`, r]),
+    fresh.rows.map((r) => [r.rowKey, r]),
   );
   const resultRows: TimeRow[] = [];
 
   // Process rows that are currently displayed
   for (const displayedRow of displayed.rows) {
-    const rowKey = `${displayedRow.projId}_${displayedRow.taskId}`;
+    const rowKey = displayedRow.rowKey;
     const freshRow = freshRowMap.get(rowKey);
+    // localEdits is keyed as "projId_taskId_dayKey" (set in App.tsx handleSave)
+    const editBase = `${displayedRow.projId}_${displayedRow.taskId}`;
 
     const mergedDays = { ...displayedRow.days };
 
     for (const dk of DAYS as readonly DayKey[]) {
       const displayedEntry = displayedRow.days[dk];
       const freshEntry = freshRow?.days[dk];
-      const editKey = `${rowKey}_${dk}`;
+      const editKey = `${editBase}_${dk}`;
       const hasLocalEdit = localEdits.has(editKey);
 
       if (freshEntry?.approved) {
