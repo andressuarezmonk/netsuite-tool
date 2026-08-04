@@ -4,6 +4,7 @@ import { addDays, getMondayISO, todayISO, weekRangeLabel } from '@/lib/dates';
 import { loadInit, loadWeek, saveRow, deleteRow } from '@/lib/api';
 import { getCached, setCached, evictOldWeeks } from '@/lib/cache';
 import { mergeWeekData } from '@/lib/merge';
+import { registerSave, waitForRowSave } from '@/lib/rowGate';
 import type { WeekData, TimeRow } from '@/lib/types';
 import WeekGrid from './components/blocks/WeekGrid/WeekGrid';
 import WeekNav from './components/atoms/WeekNav/WeekNav';
@@ -71,10 +72,12 @@ export default function App() {
     initialized: false,
   });
 
-  const statusTimerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const statusTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentWeekDataRef = useRef<WeekData | null>(null);
-  const localEditsRef    = useRef<Map<string, number>>(new Map());
-  const activeWeekRef    = useRef<string>(getMondayISO(todayISO()));
+  const localEditsRef     = useRef<Map<string, number>>(new Map());
+  const activeWeekRef     = useRef<string>(getMondayISO(todayISO()));
+  // Per-cell debounce timers: "rowKey_dayKey" -> timer handle
+  const saveTimersRef     = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
 
   useEffect(() => { currentWeekDataRef.current = state.weekData; }, [state.weekData]);
 
@@ -146,30 +149,68 @@ export default function App() {
   const handleSave = useCallback(async (
     row: TimeRow, dayKey: typeof DAYS[number], hours: number, memo: string,
   ) => {
+    const cellKey = `${row.rowKey}_${dayKey}`;
     const editKey = `${row.projId}_${row.taskId}_${dayKey}`;
+
+    // Track the intended value immediately so background refreshes don't overwrite it
     if (hours > 0) localEditsRef.current.set(editKey, hours);
     else localEditsRef.current.delete(editKey);
 
-    setStatus('mutation', 'Saving…', 'mutation');
-    try {
-      await saveRow({ projId: row.projId, projRaw: row.projRaw, taskId: row.taskId,
-        taskRaw: row.taskRaw, itemId: row.itemId, weekISO: state.weekISO,
-        dayKey, hours, memo, timeid: row.days[dayKey]?.timeid ?? '' });
-      localEditsRef.current.delete(editKey);
-      setTransientStatus('mutation', '✓ Saved', 'success');
-      const fresh = await loadWeek(state.weekISO);
-      await setCached(state.weekISO, fresh);
-      dispatch({ type: 'SET_DATA', data: mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current) });
-    } catch (err) {
-      localEditsRef.current.delete(editKey);
-      setTransientStatus('mutation', `Save failed: ${(err as Error).message}`, 'error');
-      throw err;
-    }
+    // Debounce: if the user edits this cell again within 400ms, cancel and restart
+    const existing = saveTimersRef.current.get(cellKey);
+    if (existing) clearTimeout(existing);
+
+    return new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(async () => {
+        saveTimersRef.current.delete(cellKey);
+        setStatus('mutation', 'Saving…', 'mutation');
+
+        const savePromise = (async () => {
+          await saveRow({
+            projId: row.projId, projRaw: row.projRaw,
+            taskId: row.taskId, taskRaw: row.taskRaw,
+            itemId: row.itemId, weekISO: state.weekISO,
+            dayKey, hours, memo, timeid: row.days[dayKey]?.timeid ?? '',
+          });
+          localEditsRef.current.delete(editKey);
+          setTransientStatus('mutation', '✓ Saved', 'success');
+          const fresh = await loadWeek(state.weekISO);
+          await setCached(state.weekISO, fresh);
+          dispatch({ type: 'SET_DATA', data: mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current) });
+        })();
+
+        // Register with the gate so deletes on this row can wait for us
+        registerSave(row.rowKey, savePromise);
+
+        try {
+          await savePromise;
+          resolve();
+        } catch (err) {
+          localEditsRef.current.delete(editKey);
+          setTransientStatus('mutation', `Save failed: ${(err as Error).message}`, 'error');
+          reject(err);
+        }
+      }, 400);
+
+      saveTimersRef.current.set(cellKey, timer);
+    });
   }, [state.weekISO, setStatus, setTransientStatus]);
 
   const handleDelete = useCallback(async (row: TimeRow) => {
     const timeids = DAYS.map(dk => row.days[dk]?.timeid ?? '');
     setStatus('mutation', 'Deleting…', 'mutation');
+
+    // Cancel any pending debounced save for cells in this row
+    for (const [key, timer] of saveTimersRef.current.entries()) {
+      if (key.startsWith(row.rowKey)) {
+        clearTimeout(timer);
+        saveTimersRef.current.delete(key);
+      }
+    }
+
+    // Wait for any in-flight save to complete before deleting
+    await waitForRowSave(row.rowKey);
+
     try {
       dispatch({ type: 'REMOVE_ROW', rowKey: row.rowKey });
       await deleteRow(timeids);
