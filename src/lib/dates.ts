@@ -50,8 +50,9 @@ export function hoursToNS(h: number): string {
 
 /** Format decimal hours for display: 8 → "8", 1.5 → "1.5" */
 export function formatHours(h: number): string {
-  if (!h) return "";
-  return h === Math.floor(h) ? String(h) : h.toFixed(2).replace(/\.?0+$/, "");
+  if (h === 0) return '0';
+  if (!h) return '';
+  return h === Math.floor(h) ? String(h) : h.toFixed(2).replace(/\.?0+$/, '');
 }
 
 export function weekRangeLabel(mondayISO: string): string {

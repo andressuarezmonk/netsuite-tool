@@ -7,7 +7,8 @@ import gs from '../WeekGrid/WeekGrid.module.scss'; // shared grid column classes
 import styles from './TimeRow.module.scss';
 
 export default function TimeRow({ row, dayDates, today, onSave, onDelete }: RowProps) {
-  const rowTotal   = DAYS.reduce((sum, dk) => sum + (row.days[dk]?.hours ?? 0), 0);
+  const rowTotal    = DAYS.reduce((sum, dk) => sum + (row.days[dk]?.hours ?? 0), 0);
+  const rowHasEntry = DAYS.some(dk => row.days[dk] !== undefined);
   const [deleting, setDeleting] = useState(false);
   const hasApproved = DAYS.some(dk => row.days[dk]?.approved);
 
@@ -31,7 +32,7 @@ export default function TimeRow({ row, dayDates, today, onSave, onDelete }: RowP
           onSave={onSave}
         />
       ))}
-      <td className={gs.tdTotal}>{rowTotal ? formatHours(rowTotal) : ''}</td>
+      <td className={gs.tdTotal}>{rowHasEntry ? formatHours(rowTotal) : ''}</td>
       <td className={gs.colDel}>
         <button
           className={styles.delBtn}
