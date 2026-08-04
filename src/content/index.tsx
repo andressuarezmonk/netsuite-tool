@@ -1,7 +1,7 @@
 import { createRoot } from 'react-dom/client';
 import { TARGET_SCRIPT, setHandlerScriptId } from '@/lib/constants';
 import App from './App';
-import styles from './App.css?inline';
+import styles from './App.scss?inline';
 
 const params = new URLSearchParams(window.location.search);
 if (params.get('script') === TARGET_SCRIPT) {
