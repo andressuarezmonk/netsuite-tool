@@ -28,14 +28,7 @@
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .spinner {
-  display: inline-block;
-  width: 13px;
-  height: 13px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-  flex-shrink: 0;
+  @include spinner(13px, 2px);
 
   &Sm {
     width: 10px;

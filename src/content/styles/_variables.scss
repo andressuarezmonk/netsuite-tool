@@ -34,3 +34,20 @@ $color-submitted: #1a73e8; $bg-submitted: #e8f0fe; $border-submitted: #9ab8e8;
 $pad-x:  24px;
 $radius: 6px;
 $t:      .15s;
+
+// ── Spinner mixin ─────────────────────────────────────────────────────────────
+// Use this mixin in any module that needs a spinner so the @keyframes
+// are defined locally (CSS Modules scope keyframes per file).
+
+@mixin spinner($size: 13px, $border: 2px) {
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  display: inline-block;
+  width: $size;
+  height: $size;
+  border: $border solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+}

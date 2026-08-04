@@ -43,11 +43,5 @@
 
 // Spinner reuse (imported from StatusBar context via shadow root)
 .spinner {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border: 1.5px solid currentColor;
-  border-top-color: transparent;
-  border-radius: 50%;
-  flex-shrink: 0;
+  @include spinner(10px, 1.5px);
 }
