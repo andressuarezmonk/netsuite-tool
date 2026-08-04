@@ -1,3 +1,6 @@
+import React from 'react';
+import s from './WeekNav.module.scss';
+
 interface Props {
   weekISO: string;
   label: string;
@@ -9,13 +12,11 @@ interface Props {
 
 export default function WeekNav({ label, onPrev, onNext, onToday }: Props) {
   return (
-    <div className="ft-week-nav">
+    <div className={s.nav}>
       <button onClick={onPrev}>◀ Prev</button>
-      <span className="ft-week-label">{label}</span>
+      <span className={s.label}>{label}</span>
       <button onClick={onNext}>Next ▶</button>
-      <button className="ft-btn-today" onClick={onToday}>
-        This week
-      </button>
+      <button className={s.todayBtn} onClick={onToday}>This week</button>
     </div>
   );
 }

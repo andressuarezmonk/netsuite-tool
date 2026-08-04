@@ -1,0 +1,60 @@
+@use '../../styles/variables' as *;
+
+.wrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+
+  thead th {
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: $text-muted;
+    border-bottom: 2px solid $border;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  tbody {
+    tr {
+      border-bottom: 1px solid #f0f2f8;
+      &:hover { background: #fafbff; }
+    }
+    td { padding: 6px 8px; vertical-align: middle; }
+  }
+
+  tfoot td {
+    padding: 8px 10px;
+    font-weight: 700;
+    font-size: 13px;
+    background: $surface-muted;
+    border-top: 2px solid $border;
+    text-align: center;
+  }
+}
+
+.colProj  { text-align: left !important; min-width: 160px; }
+.colTask  { text-align: left !important; min-width: 140px; }
+.colDay   { min-width: 70px; }
+.colTotal { min-width: 60px; }
+.colDel   { width: 28px; text-align: center; }
+
+.dayDate  { display: block; font-weight: 400; font-size: 10px; }
+.today    { background: #fffbe6 !important; }
+.emptyRow { text-align: center; padding: 24px !important; color: #aaa; }
+
+.totalLabel {
+  text-align: left !important;
+  font-size: 11px;
+  color: $text-muted;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+.tdProj  { font-size: 12px; font-weight: 500; color: #333; }
+.tdTask  { font-size: 12px; color: #555; }
+.tdTotal { text-align: center; font-weight: 700; }

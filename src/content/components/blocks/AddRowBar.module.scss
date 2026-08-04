@@ -1,0 +1,53 @@
+@use '../styles/variables' as *;
+
+.bar {
+  padding: 10px $pad-x;
+  border-top: 1px solid $border;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  background: $surface-muted;
+
+  select {
+    padding: 7px 9px;
+    border: 1.5px solid $border-input;
+    border-radius: $radius;
+    font-size: 13px;
+    font-family: inherit;
+    background: $surface;
+
+    &:focus { outline: none; border-color: $primary; }
+  }
+}
+
+.projSelect { min-width: 200px; }
+.taskSelect { min-width: 180px; }
+.loading    { font-size: 12px; color: $text-muted; }
+.error      { font-size: 12px; color: $color-error; }
+
+.addBtn {
+  background: $primary;
+  color: white;
+  border: none;
+  padding: 8px 18px;
+  border-radius: $radius;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background $t, opacity $t;
+
+  &:hover:not(:disabled) { background: $primary-dark; }
+  &:disabled { opacity: .4; cursor: not-allowed; }
+}
+
+// Spinner reuse (imported from StatusBar context via shadow root)
+.spinner {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

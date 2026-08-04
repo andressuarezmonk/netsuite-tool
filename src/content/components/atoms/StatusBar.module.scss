@@ -1,0 +1,45 @@
+@use '../styles/variables' as *;
+
+.bar { display: flex; flex-direction: column; }
+
+.status {
+  padding: 7px $pad-x;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  &Cache    { background: $bg-cache;    color: $color-cache; }
+  &Fetch    { background: $bg-fetch;    color: $color-fetch; }
+  &Mutation { background: $bg-mutation; color: $color-mutation; }
+  &Success  { background: $bg-success;  color: $color-success; }
+  &Error    { background: $bg-error;    color: $color-error; }
+}
+
+.label {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: .4px;
+  opacity: .7;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  flex-shrink: 0;
+
+  &Sm {
+    width: 10px;
+    height: 10px;
+    border-width: 1.5px;
+  }
+}

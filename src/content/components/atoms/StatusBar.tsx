@@ -1,10 +1,7 @@
-export type StatusKind =
-  | "cache"
-  | "fetch"
-  | "mutation"
-  | "success"
-  | "error"
-  | "";
+import React from 'react';
+import s from './StatusBar.module.scss';
+
+export type StatusKind = 'cache' | 'fetch' | 'mutation' | 'success' | 'error' | '';
 
 export interface StatusEntry {
   id: string;
@@ -16,32 +13,37 @@ interface Props {
   statuses: StatusEntry[];
 }
 
-const LABELS: Record<StatusKind, string> = {
-  cache: "Cache",
-  fetch: "Fetching",
-  mutation: "Saving",
-  success: "",
-  error: "",
-  "": "",
+const KIND_LABEL: Partial<Record<StatusKind, string>> = {
+  cache:    'Cache',
+  fetch:    'Fetching',
+  mutation: 'Saving',
+};
+
+// Map kind to the CSS module class name
+const KIND_CLASS: Record<StatusKind, string> = {
+  cache:    s.statusCache    ?? '',
+  fetch:    s.statusFetch    ?? '',
+  mutation: s.statusMutation ?? '',
+  success:  s.statusSuccess  ?? '',
+  error:    s.statusError    ?? '',
+  '':       '',
 };
 
 export default function StatusBar({ statuses }: Props) {
-  const visible = statuses.filter((s) => s.msg);
+  const visible = statuses.filter(st => st.msg);
   if (visible.length === 0) return null;
 
   return (
-    <div className="ft-statusbar">
-      {visible.map((s) => (
-        <div key={s.id} className={`ft-status ft-status--${s.kind}`}>
-          {(s.kind === "cache" ||
-            s.kind === "fetch" ||
-            s.kind === "mutation") && (
-            <span className="ft-spinner ft-spinner--sm" aria-hidden="true" />
+    <div className={s.bar}>
+      {visible.map(st => (
+        <div key={st.id} className={`${s.status} ${KIND_CLASS[st.kind]}`}>
+          {(st.kind === 'cache' || st.kind === 'fetch' || st.kind === 'mutation') && (
+            <span className={`${s.spinner} ${s.spinnerSm}`} aria-hidden="true" />
           )}
-          {LABELS[s.kind] && (
-            <span className="ft-status-label">{LABELS[s.kind]}</span>
+          {KIND_LABEL[st.kind] && (
+            <span className={s.label}>{KIND_LABEL[st.kind]}</span>
           )}
-          {s.msg}
+          {st.msg}
         </div>
       ))}
     </div>

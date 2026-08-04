@@ -1,44 +1,27 @@
-import { useState } from "react";
-import { DAYS } from "@/lib/constants";
-import { formatHours } from "@/lib/dates";
-import DayCell from "../atoms/DayCell";
-import type { RowProps } from "../types";
+import React, { useState } from 'react';
+import { DAYS } from '@/lib/constants';
+import { formatHours } from '@/lib/dates';
+import DayCell from './DayCell';
+import type { RowProps } from '../types';
+import gs from './index.module.scss';   // grid shared styles (column classes)
+import s  from './TimeRow.module.scss';
 
-export default function TimeRow({
-  row,
-  dayDates,
-  today,
-  onSave,
-  onDelete,
-}: RowProps) {
-  const rowTotal = DAYS.reduce((s, dk) => s + (row.days[dk]?.hours ?? 0), 0);
+export default function TimeRow({ row, dayDates, today, onSave, onDelete }: RowProps) {
+  const rowTotal   = DAYS.reduce((sum, dk) => sum + (row.days[dk]?.hours ?? 0), 0);
   const [deleting, setDeleting] = useState(false);
-
-  const hasApproved = DAYS.some((dk) => row.days[dk]?.approved);
+  const hasApproved = DAYS.some(dk => row.days[dk]?.approved);
 
   const handleDelete = async () => {
-    if (
-      !confirm(
-        `Remove row "${row.projName} — ${row.taskName}"? This will delete all saved time entries in this row.`,
-      )
-    )
-      return;
+    if (!confirm(`Remove row "${row.projName} — ${row.taskName}"? This will delete all saved time entries in this row.`)) return;
     setDeleting(true);
-    try {
-      await onDelete(row);
-    } finally {
-      setDeleting(false);
-    }
+    try { await onDelete(row); }
+    finally { setDeleting(false); }
   };
 
   return (
     <tr>
-      <td className="ft-col-proj" title={row.projId}>
-        {row.projName}
-      </td>
-      <td className="ft-col-task" title={row.taskId}>
-        {row.taskName || "—"}
-      </td>
+      <td className={gs.tdProj} title={row.projId}>{row.projName}</td>
+      <td className={gs.tdTask} title={row.taskId}>{row.taskName || '—'}</td>
       {DAYS.map((dk, i) => (
         <DayCell
           key={dk}
@@ -48,19 +31,15 @@ export default function TimeRow({
           onSave={onSave}
         />
       ))}
-      <td className="ft-col-total">{rowTotal ? formatHours(rowTotal) : ""}</td>
-      <td className="ft-col-del">
+      <td className={gs.tdTotal}>{rowTotal ? formatHours(rowTotal) : ''}</td>
+      <td className={gs.colDel}>
         <button
-          className="ft-del-btn"
+          className={s.delBtn}
           onClick={handleDelete}
           disabled={deleting || hasApproved}
-          title={
-            hasApproved
-              ? "Cannot delete — row has approved entries"
-              : "Remove this row"
-          }
+          title={hasApproved ? 'Cannot delete — row has approved entries' : 'Remove this row'}
         >
-          {deleting ? "…" : "×"}
+          {deleting ? '…' : '×'}
         </button>
       </td>
     </tr>

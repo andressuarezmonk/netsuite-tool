@@ -1,0 +1,36 @@
+// ── Design tokens ────────────────────────────────────────────────────────────
+
+// Brand
+$primary:      #0066cc;
+$primary-dark: #0055aa;
+
+// Header
+$header-from: #1a1a2e;
+$header-to:   #16213e;
+
+// Surfaces
+$surface:       white;
+$surface-muted: #f8f9fc;
+$border:        #edf0f7;
+$border-input:  #dde1e9;
+
+// Text
+$text:       #1a1a2e;
+$text-muted: #888;
+$text-light: #bbb;
+
+// Status
+$color-cache:    #6d28d9; $bg-cache:    #f3eefe;
+$color-fetch:    #1a73e8; $bg-fetch:    #e8f0fe;
+$color-mutation: #e65100; $bg-mutation: #fff3e0;
+$color-success:  #1e7e34; $bg-success:  #e6f4ea;
+$color-error:    #c0392b; $bg-error:    #fdecea;
+
+// Cell states
+$color-approved:  #1e7e34; $bg-approved:  #e6f4ea; $border-approved:  #b7dfc0;
+$color-submitted: #1a73e8; $bg-submitted: #e8f0fe; $border-submitted: #9ab8e8;
+
+// Layout
+$pad-x:  24px;
+$radius: 6px;
+$t:      .15s;

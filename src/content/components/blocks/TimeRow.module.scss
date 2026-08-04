@@ -1,0 +1,16 @@
+@use '../../styles/variables' as *;
+
+.delBtn {
+  background: none;
+  border: none;
+  color: $text-light;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color $t, background $t;
+
+  &:hover:not(:disabled) { color: $color-error; background: $bg-error; }
+  &:disabled { cursor: not-allowed; opacity: .35; }
+}

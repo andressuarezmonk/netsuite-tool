@@ -10,3 +10,9 @@ declare module '*.scss?inline' {
   const content: string;
   export default content;
 }
+
+// CSS Modules with ?inline — returns the raw compiled CSS string
+declare module '*.module.scss?inline' {
+  const content: string;
+  export default content;
+}

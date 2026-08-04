@@ -1,0 +1,23 @@
+@use '../../styles/variables' as *;
+
+.cell { text-align: center; }
+.today { background: #fffbe6 !important; }
+
+.input {
+  width: 62px;
+  padding: 5px 6px;
+  text-align: center;
+  border: 1.5px solid #e0e3eb;
+  border-radius: 5px;
+  font-size: 13px;
+  font-family: inherit;
+  background: $surface;
+  transition: border-color $t, opacity $t;
+
+  &:focus { outline: none; border-color: $primary; }
+
+  &Approved  { background: $bg-approved;  border-color: $border-approved;  color: $color-approved;  cursor: not-allowed; }
+  &Submitted { background: $bg-submitted; border-color: $border-submitted; color: $color-submitted; cursor: not-allowed; }
+  &HasValue  { border-color: $border-submitted; background: #f0f6ff; }
+  &Saving    { opacity: .5; }
+}

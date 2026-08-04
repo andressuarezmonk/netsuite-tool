@@ -1,0 +1,39 @@
+@use '../styles/variables' as *;
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px $pad-x;
+  border-bottom: 1px solid $border;
+  background: $surface-muted;
+
+  button {
+    background: none;
+    border: 1.5px solid #ccc;
+    border-radius: $radius;
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #444;
+    transition: border-color $t, color $t;
+
+    &:hover { border-color: $primary; color: $primary; }
+  }
+}
+
+.label {
+  font-weight: 600;
+  font-size: 14px;
+  min-width: 220px;
+  text-align: center;
+  flex: 1;
+}
+
+.todayBtn {
+  background: $primary !important;
+  color: white !important;
+  border-color: $primary !important;
+
+  &:hover { background: $primary-dark !important; }
+}
