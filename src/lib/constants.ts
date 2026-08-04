@@ -9,7 +9,7 @@
 // (set in index.tsx after reading it from the page source).
 
 export function getAccountId(): string {
-  return window.location.hostname.split('.')[0];
+  return window.location.hostname.split(".")[0];
 }
 
 export function getNSBaseUrl(): string {
@@ -27,7 +27,7 @@ let _handler = buildDefaultHandler();
 
 function buildDefaultHandler(): string {
   const params = new URLSearchParams(window.location.search);
-  const scriptId = parseInt(params.get('script') ?? '2375', 10);
+  const scriptId = parseInt(params.get("script") ?? "2375", 10);
   const handlerScript = scriptId - 2; // convention: 2375 -> 2373
   return `${window.location.origin}/app/site/hosting/scriptlet.nl?script=${handlerScript}&deploy=1`;
 }
@@ -37,6 +37,6 @@ export function setHandlerScriptId(scriptId: string): void {
   _handler = `${window.location.origin}/app/site/hosting/scriptlet.nl?script=${scriptId}&deploy=1`;
 }
 
-export const TARGET_SCRIPT = '2375';
-export const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
-export type DayKey = typeof DAYS[number];
+export const TARGET_SCRIPT = "2375";
+export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
+export type DayKey = (typeof DAYS)[number];

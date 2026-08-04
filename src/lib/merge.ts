@@ -9,8 +9,8 @@
  * - Rows that disappeared from the server are kept (user may have added them locally)
  */
 
-import { WeekData, TimeRow, DayEntry } from './types';
-import { DayKey, DAYS } from './constants';
+import type { WeekData, TimeRow, DayEntry } from "./types";
+import { DAYS, type DayKey } from "./constants";
 
 /**
  * localEdits: a map of "projId_taskId_dayKey" -> hours the user typed locally
@@ -21,7 +21,9 @@ export function mergeWeekData(
   fresh: WeekData,
   localEdits: Map<string, number>,
 ): WeekData {
-  const freshRowMap = new Map(fresh.rows.map(r => [`${r.projId}_${r.taskId}`, r]));
+  const freshRowMap = new Map(
+    fresh.rows.map((r) => [`${r.projId}_${r.taskId}`, r]),
+  );
   const resultRows: TimeRow[] = [];
 
   // Process rows that are currently displayed
@@ -49,10 +51,10 @@ export function mergeWeekData(
             // Preserve local edit hours
             hours: localEdits.get(editKey) ?? displayedEntry.hours,
             // Update server-side metadata if fresh has it
-            timeid:    freshEntry?.timeid    ?? displayedEntry.timeid,
-            approved:  freshEntry?.approved  ?? displayedEntry.approved,
+            timeid: freshEntry?.timeid ?? displayedEntry.timeid,
+            approved: freshEntry?.approved ?? displayedEntry.approved,
             submitted: freshEntry?.submitted ?? displayedEntry.submitted,
-            disabled:  freshEntry?.disabled  ?? displayedEntry.disabled,
+            disabled: freshEntry?.disabled ?? displayedEntry.disabled,
           };
         }
       } else if (freshEntry !== undefined) {
@@ -75,7 +77,7 @@ export function mergeWeekData(
   }
 
   // Filter out rows with no days (empty rows from either source)
-  const nonEmpty = resultRows.filter(r => Object.keys(r.days).length > 0);
+  const nonEmpty = resultRows.filter((r) => Object.keys(r.days).length > 0);
 
   return { ...fresh, rows: nonEmpty };
 }
@@ -89,12 +91,12 @@ export function patchDayEntry(
   patch: Partial<DayEntry>,
 ): DayEntry {
   return {
-    hours:     existing?.hours     ?? 0,
-    memo:      existing?.memo      ?? '',
-    timeid:    existing?.timeid    ?? '',
-    approved:  existing?.approved  ?? false,
+    hours: existing?.hours ?? 0,
+    memo: existing?.memo ?? "",
+    timeid: existing?.timeid ?? "",
+    approved: existing?.approved ?? false,
     submitted: existing?.submitted ?? false,
-    disabled:  existing?.disabled  ?? false,
+    disabled: existing?.disabled ?? false,
     ...patch,
   };
 }

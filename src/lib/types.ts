@@ -1,4 +1,4 @@
-import { DayKey } from './constants';
+import type { DayKey } from "./constants";
 
 export interface DayEntry {
   hours: number;

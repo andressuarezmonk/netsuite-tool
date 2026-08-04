@@ -4,7 +4,7 @@
  * Each entry stores the WeekData plus a timestamp.
  */
 
-import { WeekData } from './types';
+import type { WeekData } from './types';
 
 const PREFIX = 'week_';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days — evict old weeks automatically
