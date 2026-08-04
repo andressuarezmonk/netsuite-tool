@@ -1,4 +1,3 @@
-import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { TARGET_SCRIPT, setHandlerScriptId } from '@/lib/constants';
 import App from './App';

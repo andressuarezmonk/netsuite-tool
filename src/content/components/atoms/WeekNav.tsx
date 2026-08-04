@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface Props {
   weekISO: string;
   label: string;
@@ -15,7 +13,9 @@ export default function WeekNav({ label, onPrev, onNext, onToday }: Props) {
       <button onClick={onPrev}>◀ Prev</button>
       <span className="ft-week-label">{label}</span>
       <button onClick={onNext}>Next ▶</button>
-      <button className="ft-btn-today" onClick={onToday}>This week</button>
+      <button className="ft-btn-today" onClick={onToday}>
+        This week
+      </button>
     </div>
   );
 }

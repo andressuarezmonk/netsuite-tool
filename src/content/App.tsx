@@ -1,14 +1,14 @@
-import React, { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { DAYS, getNSBaseUrl } from '@/lib/constants';
 import { addDays, getMondayISO, todayISO, weekRangeLabel } from '@/lib/dates';
 import { loadInit, loadWeek, saveRow, deleteRow } from '@/lib/api';
 import { getCached, setCached, evictOldWeeks } from '@/lib/cache';
 import { mergeWeekData } from '@/lib/merge';
 import type { WeekData, TimeRow } from '@/lib/types';
-import WeekGrid from './components/WeekGrid';
-import WeekNav from './components/WeekNav';
-import AddRowBar from './components/AddRowBar';
-import StatusBar, { type StatusEntry, type StatusKind } from './components/StatusBar';
+import WeekGrid from './components/blocks/WeekGrid';
+import WeekNav from './components/atoms/WeekNav';
+import AddRowBar from './components/blocks/AddRowBar';
+import StatusBar, { type StatusEntry, type StatusKind } from './components/atoms/StatusBar';
 interface State {
   weekISO: string;
   weekData: WeekData | null;
