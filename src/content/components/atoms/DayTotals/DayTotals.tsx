@@ -1,6 +1,6 @@
 import { DAYS } from "@/lib/constants";
 import { formatHours } from "@/lib/dates";
-import type { TotalsProps } from "../types";
+import type { TotalsProps } from "../../types";
 
 export default function DayTotals({ rows, dayDates, today }: TotalsProps) {
   const grandTotal = DAYS.reduce(

@@ -3,14 +3,14 @@ import { TARGET_SCRIPT, setHandlerScriptId } from '@/lib/constants';
 import App from './App';
 
 // Collect all component styles to inject into the Shadow DOM
-import appStyles        from './components/App.module.scss?inline';
-import weekNavStyles    from './components/WeekNav.module.scss?inline';
-import statusBarStyles  from './components/StatusBar.module.scss?inline';
-import addRowBarStyles  from './components/AddRowBar.module.scss?inline';
-import weekGridStyles   from './components/WeekGrid/index.module.scss?inline';
-import timeRowStyles    from './components/WeekGrid/TimeRow.module.scss?inline';
-import dayCellStyles    from './components/WeekGrid/DayCell.module.scss?inline';
-import dayTotalsStyles  from './components/WeekGrid/DayTotals.module.scss?inline';
+import appStyles       from './components/App.module.scss?inline';
+import weekNavStyles   from './components/atoms/WeekNav/WeekNav.module.scss?inline';
+import statusBarStyles from './components/atoms/StatusBar/StatusBar.module.scss?inline';
+import addRowBarStyles from './components/blocks/AddRowBar/AddRowBar.module.scss?inline';
+import weekGridStyles  from './components/blocks/WeekGrid/WeekGrid.module.scss?inline';
+import timeRowStyles   from './components/blocks/TimeRow/TimeRow.module.scss?inline';
+import dayCellStyles   from './components/blocks/DayCell/DayCell.module.scss?inline';
+import dayTotalsStyles from './components/blocks/DayTotals/DayTotals.module.scss?inline';
 
 const allStyles = [
   appStyles, weekNavStyles, statusBarStyles, addRowBarStyles,

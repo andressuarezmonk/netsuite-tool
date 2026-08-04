@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { DAYS } from '@/lib/constants';
 import { formatHours } from '@/lib/dates';
-import DayCell from './DayCell';
-import type { RowProps } from '../types';
-import gs from './index.module.scss';   // grid shared styles (column classes)
-import s  from './TimeRow.module.scss';
+import DayCell from '../DayCell/DayCell';
+import type { RowProps } from '../../types';
+import gs from '../WeekGrid/WeekGrid.module.scss'; // shared grid column classes
+import styles from './TimeRow.module.scss';
 
 export default function TimeRow({ row, dayDates, today, onSave, onDelete }: RowProps) {
   const rowTotal   = DAYS.reduce((sum, dk) => sum + (row.days[dk]?.hours ?? 0), 0);
@@ -34,7 +34,7 @@ export default function TimeRow({ row, dayDates, today, onSave, onDelete }: RowP
       <td className={gs.tdTotal}>{rowTotal ? formatHours(rowTotal) : ''}</td>
       <td className={gs.colDel}>
         <button
-          className={s.delBtn}
+          className={styles.delBtn}
           onClick={handleDelete}
           disabled={deleting || hasApproved}
           title={hasApproved ? 'Cannot delete — row has approved entries' : 'Remove this row'}

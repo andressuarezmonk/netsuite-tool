@@ -1,9 +1,9 @@
 import { DAYS } from '@/lib/constants';
 import { addDays, todayISO } from '@/lib/dates';
 import type { WeekData } from '@/lib/types';
-import TimeRow from './TimeRow';
-import DayTotals from './DayTotals';
-import type { OnSave, OnDelete } from '../types';
+import TimeRow from '../TimeRow/TimeRow';
+import DayTotals from '../DayTotals/DayTotals';
+import type { OnSave, OnDelete } from '../../types';
 import styles from './WeekGrid.module.scss';
 
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];

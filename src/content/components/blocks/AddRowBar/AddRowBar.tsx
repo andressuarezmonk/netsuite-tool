@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getProjects, getTasks } from '@/lib/api';
 import type { TimeRow, Project } from '@/lib/types';
 import s from './AddRowBar.module.scss';

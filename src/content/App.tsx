@@ -5,10 +5,10 @@ import { loadInit, loadWeek, saveRow, deleteRow } from '@/lib/api';
 import { getCached, setCached, evictOldWeeks } from '@/lib/cache';
 import { mergeWeekData } from '@/lib/merge';
 import type { WeekData, TimeRow } from '@/lib/types';
-import WeekGrid from './components/blocks/WeekGrid';
-import WeekNav from './components/atoms/WeekNav';
-import AddRowBar from './components/blocks/AddRowBar';
-import StatusBar, { type StatusEntry, type StatusKind } from './components/atoms/StatusBar';
+import WeekGrid from './components/blocks/WeekGrid/WeekGrid';
+import WeekNav from './components/atoms/WeekNav/WeekNav';
+import AddRowBar from './components/blocks/AddRowBar/AddRowBar';
+import StatusBar, { type StatusEntry, type StatusKind } from './components/atoms/StatusBar/StatusBar';
 import styles from './components/App.module.scss';
 
 interface State {

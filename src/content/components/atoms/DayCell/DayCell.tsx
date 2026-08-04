@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { formatHours } from "@/lib/dates";
-import type { CellProps } from "../types";
+import type { CellProps } from "../../types";
 
 export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
   const entry = row.days[dayKey];

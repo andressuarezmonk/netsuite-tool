@@ -1,8 +1,7 @@
-import React from 'react';
 import { DAYS } from '@/lib/constants';
 import { formatHours } from '@/lib/dates';
-import type { TotalsProps } from './types';
-import gs from './index.module.scss';
+import type { TotalsProps } from '../../types';
+import gs from '../WeekGrid/WeekGrid.module.scss'; // shared grid column classes
 import s  from './DayTotals.module.scss';
 
 export default function DayTotals({ rows, dayDates, today }: TotalsProps) {
