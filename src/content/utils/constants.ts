@@ -8,13 +8,9 @@
 // The data handler script ID is stored in chrome.storage when the page loads
 // (set in index.tsx after reading it from the page source).
 
-export function getAccountId(): string {
-  return window.location.hostname.split(".")[0];
-}
+export const getAccountId = () => window.location.hostname.split(".")[0];
 
-export function getNSBaseUrl(): string {
-  return window.location.origin;
-}
+export const getNSBaseUrl = () => window.location.origin;
 
 // The handler URL is built from values stored by the content script on first load.
 // Falls back to the convention of TARGET_SCRIPT - 2 if storage hasn't been set yet.
