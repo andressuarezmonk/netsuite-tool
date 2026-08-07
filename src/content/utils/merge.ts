@@ -17,69 +17,66 @@ import { DAYS, type DayKey } from "./constants";
  * (tracked in the UI layer and passed here so we know what not to overwrite)
  */
 export function mergeWeekData(
-  displayed: WeekData,
-  fresh: WeekData,
+  displayedWeekData: WeekData,
+  freshWeekData: WeekData,
   localEdits: Map<string, number>,
 ): WeekData {
-  const freshRowMap = new Map(fresh.rows.map((r) => [r.rowKey, r]));
-  const resultRows: TimeRow[] = [];
+  const freshRowsByKey = new Map(
+    freshWeekData.rows.map((row) => [row.rowKey, row]),
+  );
 
-  // Process rows that are currently displayed
-  for (const displayedRow of displayed.rows) {
-    const rowKey = displayedRow.rowKey;
-    const freshRow = freshRowMap.get(rowKey);
-    // localEdits is keyed as "projId_taskId_dayKey" (set in App.tsx handleSave)
-    const editBase = `${displayedRow.projId}_${displayedRow.taskId}`;
+  const mergedDisplayedRows = displayedWeekData.rows.map((displayedRow) => {
+    const { rowKey, projId, taskId } = displayedRow;
+    const freshRow = freshRowsByKey.get(rowKey);
+    const localEditKeyPrefix = `${projId}_${taskId}`;
 
-    const mergedDays = { ...displayedRow.days };
+    const mergedDays: TimeRow["days"] = {};
 
-    for (const dk of DAYS as readonly DayKey[]) {
-      const displayedEntry = displayedRow.days[dk];
-      const freshEntry = freshRow?.days[dk];
-      const editKey = `${editBase}_${dk}`;
-      const hasLocalEdit = localEdits.has(editKey);
+    DAYS.forEach((dayKey) => {
+      const displayedDayEntry = displayedRow.days[dayKey as DayKey];
+      const freshDayEntry = freshRow?.days[dayKey as DayKey];
+      const localEditKey = `${localEditKeyPrefix}_${dayKey}`;
+      const userHasLocalEditForCell = localEdits.has(localEditKey);
 
-      if (freshEntry?.approved) {
-        // Approved on server → always take fresh value, local edit is irrelevant
-        mergedDays[dk] = freshEntry;
-      } else if (hasLocalEdit) {
-        // User made a local edit to this cell → keep their value
-        // but update metadata (timeid, memo) from fresh if available
-        if (displayedEntry) {
-          mergedDays[dk] = {
-            ...displayedEntry,
-            // Preserve local edit hours
-            hours: localEdits.get(editKey) ?? displayedEntry.hours,
-            // Update server-side metadata if fresh has it
-            timeid: freshEntry?.timeid ?? displayedEntry.timeid,
-            approved: freshEntry?.approved ?? displayedEntry.approved,
-            submitted: freshEntry?.submitted ?? displayedEntry.submitted,
-            disabled: freshEntry?.disabled ?? displayedEntry.disabled,
-          };
-        }
-      } else if (freshEntry !== undefined) {
-        // No local edit, fresh data available → take fresh
-        mergedDays[dk] = freshEntry;
-      } else if (freshRow !== undefined && displayedEntry !== undefined) {
-        // Row exists in fresh but this day has no entry → cell is now empty on server
-        delete mergedDays[dk];
+      if (freshDayEntry?.approved) {
+        // Approved on server → always take fresh value, any local edit is irrelevant
+        mergedDays[dayKey as DayKey] = freshDayEntry;
+      } else if (userHasLocalEditForCell && displayedDayEntry) {
+        // User made a local edit to this cell → preserve their hours,
+        // but pull in updated server metadata (timeid, flags) if available
+        mergedDays[dayKey as DayKey] = {
+          ...displayedDayEntry,
+          hours: localEdits.get(localEditKey) ?? displayedDayEntry.hours,
+          timeid: freshDayEntry?.timeid ?? displayedDayEntry.timeid,
+          approved: freshDayEntry?.approved ?? displayedDayEntry.approved,
+          submitted: freshDayEntry?.submitted ?? displayedDayEntry.submitted,
+          disabled: freshDayEntry?.disabled ?? displayedDayEntry.disabled,
+        };
+      } else if (freshDayEntry !== undefined) {
+        // No local edit and fresh data is available → take fresh
+        mergedDays[dayKey as DayKey] = freshDayEntry;
+      } else if (freshRow === undefined && displayedDayEntry !== undefined) {
+        // Row is absent from fresh entirely → keep displayed as-is
+        // (user may have just added this row locally)
+        mergedDays[dayKey as DayKey] = displayedDayEntry;
       }
-      // else: no fresh row for this row at all, keep displayed as-is
-    }
+      // else: row exists in fresh but this day has no entry →
+      // the server considers this cell empty, so omit it
+    });
 
-    resultRows.push({ ...displayedRow, days: mergedDays });
-    freshRowMap.delete(rowKey); // mark as processed
-  }
+    freshRowsByKey.delete(rowKey); // mark as processed so we don't add it again below
+    return { ...displayedRow, days: mergedDays };
+  });
 
-  // Add new rows from server that weren't in the displayed data
-  for (const freshRow of freshRowMap.values()) {
-    resultRows.push(freshRow);
-  }
+  // Append new rows from the server that weren't in the displayed data
+  const newServerRows = [...freshRowsByKey.values()];
 
-  // Filter out rows with no days (empty rows from either source)
-  const nonEmpty = resultRows.filter((r) => Object.keys(r.days).length > 0);
+  // Drop rows with no day entries (can arise from either source)
+  const nonEmptyRows = [...mergedDisplayedRows, ...newServerRows].filter(
+    (row) => Object.keys(row.days).length > 0,
+  );
 
-  return { ...fresh, rows: nonEmpty };
+  return { ...freshWeekData, rows: nonEmptyRows };
 }
 
 /**
@@ -87,16 +84,16 @@ export function mergeWeekData(
  * Used when the server confirms a save (we get back a timeid).
  */
 export function patchDayEntry(
-  existing: DayEntry | undefined,
+  existingDayEntry: DayEntry | undefined,
   patch: Partial<DayEntry>,
 ): DayEntry {
   return {
-    hours: existing?.hours ?? 0,
-    memo: existing?.memo ?? "",
-    timeid: existing?.timeid ?? "",
-    approved: existing?.approved ?? false,
-    submitted: existing?.submitted ?? false,
-    disabled: existing?.disabled ?? false,
+    hours: existingDayEntry?.hours ?? 0,
+    memo: existingDayEntry?.memo ?? "",
+    timeid: existingDayEntry?.timeid ?? "",
+    approved: existingDayEntry?.approved ?? false,
+    submitted: existingDayEntry?.submitted ?? false,
+    disabled: existingDayEntry?.disabled ?? false,
     ...patch,
   };
 }
