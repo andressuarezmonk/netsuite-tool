@@ -1,10 +1,10 @@
-import type { WeekData, TimeRow } from "@/lib/types";
+import type { WeekData, TimeRow } from "@/content/utils/types";
 import {
   StatusKind,
   type StatusEntry,
 } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
-import { getMondayISO, todayISO } from "@/lib/dates";
+import { getMondayISO, todayISO } from "@/content/utils/dates";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
 
 export { APP_ACTION_TYPE };

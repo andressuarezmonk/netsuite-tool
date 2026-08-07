@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import type { TimeRow } from "@/lib/types";
-import type { DayKey } from "@/lib/constants";
-import { formatHours } from "@/lib/dates";
+import type { TimeRow } from "@/content/utils/types";
+import type { DayKey } from "@/content/utils/constants";
+import { formatHours } from "@/content/utils/dates";
 import { useAppActions } from "../../../context/AppContext";
 import s from "./DayCell.module.scss";
 

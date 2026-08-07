@@ -1,5 +1,5 @@
-import { DAYS } from "@/lib/constants";
-import { formatHours } from "@/lib/dates";
+import { DAYS } from "@/content/utils/constants";
+import { formatHours } from "@/content/utils/dates";
 import type { TotalsProps } from "../../types";
 import gs from "../WeekGrid/WeekGrid.module.scss"; // shared grid column classes
 import s from "./DayTotals.module.scss";

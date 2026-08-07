@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { DAYS } from "@/lib/constants";
-import { formatHours } from "@/lib/dates";
-import type { TimeRow as TimeRowType } from "@/lib/types";
+import { DAYS } from "@/content/utils/constants";
+import { formatHours } from "@/content/utils/dates";
+import type { TimeRow as TimeRowType } from "@/content/utils/types";
 import DayCell from "../DayCell/DayCell";
 import { useAppActions } from "../../../context/AppContext";
 import gs from "../WeekGrid/WeekGrid.module.scss";

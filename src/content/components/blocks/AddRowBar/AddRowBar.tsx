@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { getProjects, getTasks } from "@/lib/api";
-import type { TimeRow, Project } from "@/lib/types";
+import { getProjects, getTasks } from "@/content/utils/api";
+import type { TimeRow, Project } from "@/content/utils/types";
 import { useAppActions } from "../../../context/AppContext";
 import s from "./AddRowBar.module.scss";
 

@@ -1,11 +1,11 @@
 import { createContext, useContext, type Dispatch } from "react";
-import type { TimeRow, WeekData } from "@/lib/types";
+import type { TimeRow, WeekData } from "@/content/utils/types";
 import type {
   StatusEntry,
   StatusKind,
 } from "../components/atoms/StatusBar/StatusBar";
 import type { Action } from "../utils/appReducer";
-import type { DayKey } from "@/lib/constants";
+import type { DayKey } from "@/content/utils/constants";
 
 export interface AppState {
   weekISO: string;

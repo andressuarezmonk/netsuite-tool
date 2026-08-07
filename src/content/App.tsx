@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import { getNSBaseUrl } from "@/lib/constants";
-import { loadInit } from "@/lib/api";
-import { evictOldWeeks } from "@/lib/cache";
-import type { TimeRow } from "@/lib/types";
+import { getNSBaseUrl } from "@/content/utils/constants";
+import { loadInit } from "@/content/utils/api";
+import { evictOldWeeks } from "@/content/utils/cache";
+import type { TimeRow } from "@/content/utils/types";
 import WeekGrid from "./components/blocks/WeekGrid/WeekGrid";
 import WeekNav from "./components/atoms/WeekNav/WeekNav";
 import AddRowBar from "./components/blocks/AddRowBar/AddRowBar";

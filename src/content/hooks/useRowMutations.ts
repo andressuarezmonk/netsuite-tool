@@ -4,12 +4,12 @@ import {
   type Dispatch,
   type MutableRefObject,
 } from "react";
-import { DAYS, type DayKey } from "@/lib/constants";
-import { loadWeek, saveRow, deleteRow } from "@/lib/api";
-import { setCached } from "@/lib/cache";
-import { mergeWeekData } from "@/lib/merge";
-import { registerSave, waitForRowSave } from "@/lib/rowGate";
-import type { TimeRow, WeekData } from "@/lib/types";
+import { DAYS, type DayKey } from "@/content/utils/constants";
+import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
+import { setCached } from "@/content/utils/cache";
+import { mergeWeekData } from "@/content/utils/merge";
+import { registerSave, waitForRowSave } from "@/content/utils/rowGate";
+import type { TimeRow, WeekData } from "@/content/utils/types";
 import type { Action } from "../utils/appReducer";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
 import { StatusKind } from "../constants/statusKind";

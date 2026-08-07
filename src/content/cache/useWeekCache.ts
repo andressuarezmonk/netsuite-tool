@@ -4,11 +4,11 @@ import {
   type Dispatch,
   type MutableRefObject,
 } from "react";
-import { getMondayISO, todayISO } from "@/lib/dates";
-import { loadWeek } from "@/lib/api";
-import { getCached, setCached } from "@/lib/cache";
-import { mergeWeekData } from "@/lib/merge";
-import type { WeekData } from "@/lib/types";
+import { getMondayISO, todayISO } from "@/content/utils/dates";
+import { loadWeek } from "@/content/utils/api";
+import { getCached, setCached } from "@/content/utils/cache";
+import { mergeWeekData } from "@/content/utils/merge";
+import type { WeekData } from "@/content/utils/types";
 import type { Action } from "../utils/appReducer";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
 import { StatusKind } from "../constants/statusKind";

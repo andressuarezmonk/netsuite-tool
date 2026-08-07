@@ -8,6 +8,7 @@ import {
   dayIndexFromMonday,
   dayKeyFromIndex,
 } from "./dates";
+import { apiFetch } from "./fetchUtils";
 import type { Project, Task, TimeRow, WeekData, SaveRowParams } from "./types";
 
 // ── Module-level state ──────────────────────────────────────────────────────
@@ -30,15 +31,6 @@ export function getTasks(projId: string) {
 }
 export function getUserId() {
   return _userId;
-}
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-async function apiFetch(url: string): Promise<string> {
-  const r = await fetch(url, { credentials: "include" });
-  if (!r.ok) throw new Error(`HTTP ${r.status}`);
-  const text = await r.text();
-  return text.replace(/<!--[\s\S]*$/, "").trim();
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────

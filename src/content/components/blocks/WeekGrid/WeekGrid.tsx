@@ -1,5 +1,5 @@
-import { DAYS } from "@/lib/constants";
-import { addDays, todayISO } from "@/lib/dates";
+import { DAYS } from "@/content/utils/constants";
+import { addDays, todayISO } from "@/content/utils/dates";
 import TimeRow from "../TimeRow/TimeRow";
 import DayTotals from "../DayTotals/DayTotals";
 import { useAppState } from "../../../context/AppContext";
