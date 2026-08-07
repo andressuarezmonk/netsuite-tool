@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import { DAYS, getNSBaseUrl, type DayKey } from "@/lib/constants";
-import { getMondayISO, todayISO } from "@/lib/dates";
 import { loadInit, loadWeek, saveRow, deleteRow } from "@/lib/api";
-import { getCached, setCached, evictOldWeeks } from "@/lib/cache";
+import { setCached, evictOldWeeks } from "@/lib/cache";
 import { mergeWeekData } from "@/lib/merge";
 import { registerSave, waitForRowSave } from "@/lib/rowGate";
-import type { WeekData, TimeRow } from "@/lib/types";
+import type { TimeRow } from "@/lib/types";
 import WeekGrid from "./components/blocks/WeekGrid/WeekGrid";
 import WeekNav from "./components/atoms/WeekNav/WeekNav";
 import AddRowBar from "./components/blocks/AddRowBar/AddRowBar";
@@ -14,84 +13,34 @@ import styles from "./components/App.module.scss";
 import { reducer, initialState, APP_ACTION_TYPE } from "./utils/appReducer";
 import { AppStateContext, AppActionsContext } from "./context/AppContext";
 import { createStatusActions } from "./utils/statusActions";
+import { useWeekCache } from "./cache/useWeekCache";
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
 
-  const currentWeekDataRef = useRef<WeekData | null>(null);
-  const localEditsRef = useRef<Map<string, number>>(new Map());
-  const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
   const saveTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
     new Map(),
   );
 
-  useEffect(() => {
-    currentWeekDataRef.current = state.weekData;
-  }, [state.weekData]);
-
-  // Status helpers — stable reference, created once with dispatch
   const { setStatus, clearStatus, setTransientStatus } = useMemo(
     () => createStatusActions(dispatch),
-
     [],
   );
 
-  const loadWeekWithCache = useCallback(
-    async (mondayISO: string) => {
-      activeWeekRef.current = mondayISO;
-      localEditsRef.current = new Map();
+  const {
+    loadWeekWithCache,
+    currentWeekDataRef,
+    localEditsRef,
+    activeWeekRef,
+  } = useWeekCache(dispatch, { setStatus, clearStatus });
 
-      const cached = await getCached(mondayISO);
-      if (activeWeekRef.current !== mondayISO) return;
-
-      if (cached) {
-        dispatch({
-          type: APP_ACTION_TYPE.SetData,
-          data: cached,
-          refreshing: true,
-        });
-        setStatus("cache", "Loaded from cache — refreshing…", StatusKind.Cache);
-      } else {
-        setStatus("fetch", "Loading week data…", StatusKind.Fetch);
-      }
-
-      try {
-        const fresh = await loadWeek(mondayISO);
-        if (activeWeekRef.current !== mondayISO) {
-          await setCached(mondayISO, fresh);
-          return;
-        }
-        await setCached(mondayISO, fresh);
-        const displayed = currentWeekDataRef.current;
-        const merged = displayed
-          ? mergeWeekData(displayed, fresh, localEditsRef.current)
-          : fresh;
-        dispatch({
-          type: APP_ACTION_TYPE.SetData,
-          data: merged,
-          refreshing: false,
-        });
-        clearStatus("cache");
-        clearStatus("fetch");
-      } catch (err) {
-        if (activeWeekRef.current !== mondayISO) return;
-        if (!cached)
-          setStatus(
-            "fetch",
-            `Failed to load: ${(err as Error).message}`,
-            StatusKind.Error,
-          );
-        else {
-          setStatus("cache", "⚠ Refresh failed", StatusKind.Error);
-          dispatch({ type: APP_ACTION_TYPE.SetRefreshing, value: false });
-        }
-      }
-    },
-    [setStatus, clearStatus],
-  );
+  // Keep currentWeekDataRef in sync so background merges use the latest data
+  useEffect(() => {
+    currentWeekDataRef.current = state.weekData;
+  }, [state.weekData, currentWeekDataRef]);
 
   useEffect(() => {
-    (async () => {
+    const initialFetch = async () => {
       try {
         evictOldWeeks();
         await loadInit();
@@ -105,7 +54,9 @@ export default function App() {
           StatusKind.Error,
         );
       }
-    })();
+    };
+
+    initialFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -115,7 +66,7 @@ export default function App() {
       dispatch({ type: APP_ACTION_TYPE.SetWeek, weekISO: mondayISO });
       loadWeekWithCache(mondayISO);
     },
-    [loadWeekWithCache],
+    [loadWeekWithCache, activeWeekRef],
   );
 
   const onSave = useCallback(
@@ -180,7 +131,13 @@ export default function App() {
         saveTimersRef.current.set(cellKey, timer);
       });
     },
-    [state.weekISO, setStatus, setTransientStatus],
+    [
+      state.weekISO,
+      setStatus,
+      setTransientStatus,
+      localEditsRef,
+      currentWeekDataRef,
+    ],
   );
 
   const onDelete = useCallback(
@@ -221,7 +178,13 @@ export default function App() {
         });
       }
     },
-    [state.weekISO, setStatus, setTransientStatus],
+    [
+      state.weekISO,
+      setStatus,
+      setTransientStatus,
+      currentWeekDataRef,
+      localEditsRef,
+    ],
   );
 
   const onAddRow = useCallback((row: TimeRow) => {
