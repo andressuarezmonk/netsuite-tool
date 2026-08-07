@@ -12,6 +12,7 @@ import type { WeekData } from "@/lib/types";
 import type { Action } from "../utils/appReducer";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
 import { StatusKind } from "../constants/statusKind";
+import { StatusId } from "../constants/statusId";
 
 type StatusActions = {
   setStatus: (id: string, msg: string, kind: StatusKind) => void;
@@ -54,9 +55,13 @@ export function useWeekCache(
           data: cached,
           refreshing: true,
         });
-        setStatus("cache", "Loaded from cache — refreshing…", StatusKind.Cache);
+        setStatus(
+          StatusId.Cache,
+          "Loaded from cache — refreshing…",
+          StatusKind.Cache,
+        );
       } else {
-        setStatus("fetch", "Loading week data…", StatusKind.Fetch);
+        setStatus(StatusId.Fetch, "Loading week data…", StatusKind.Fetch);
       }
 
       try {
@@ -75,8 +80,8 @@ export function useWeekCache(
           data: merged,
           refreshing: false,
         });
-        clearStatus("cache");
-        clearStatus("fetch");
+        clearStatus(StatusId.Cache);
+        clearStatus(StatusId.Fetch);
       } catch (err) {
         if (activeWeekRef.current !== mondayISO) return;
         if (!cached) {
@@ -86,7 +91,7 @@ export function useWeekCache(
             StatusKind.Error,
           );
         } else {
-          setStatus("cache", "⚠ Refresh failed", StatusKind.Error);
+          setStatus(StatusId.Cache, "⚠ Refresh failed", StatusKind.Error);
           dispatch({ type: APP_ACTION_TYPE.SetRefreshing, value: false });
         }
       }

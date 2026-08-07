@@ -13,6 +13,7 @@ import styles from "./components/App.module.scss";
 import { reducer, initialState, APP_ACTION_TYPE } from "./utils/appReducer";
 import { AppStateContext, AppActionsContext } from "./context/AppContext";
 import { createStatusActions } from "./utils/statusActions";
+import { StatusId } from "./constants/statusId";
 import { useWeekCache } from "./cache/useWeekCache";
 
 export default function App() {
@@ -45,7 +46,7 @@ export default function App() {
         evictOldWeeks();
         await loadInit();
         dispatch({ type: APP_ACTION_TYPE.Initialized });
-        clearStatus("init");
+        clearStatus(StatusId.Init);
         await loadWeekWithCache(state.weekISO);
       } catch (err) {
         setStatus(
@@ -83,7 +84,7 @@ export default function App() {
       return new Promise<void>((resolve, reject) => {
         const timer = setTimeout(async () => {
           saveTimersRef.current.delete(cellKey);
-          setStatus("mutation", "Saving…", StatusKind.Mutation);
+          setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
 
           const savePromise = (async () => {
             await saveRow({
@@ -99,7 +100,11 @@ export default function App() {
               timeid: row.days[dayKey]?.timeid ?? "",
             });
             localEditsRef.current.delete(editKey);
-            setTransientStatus("mutation", "✓ Saved", StatusKind.Success);
+            setTransientStatus(
+              StatusId.Mutation,
+              "✓ Saved",
+              StatusKind.Success,
+            );
             const fresh = await loadWeek(state.weekISO);
             await setCached(state.weekISO, fresh);
             dispatch({
@@ -143,7 +148,7 @@ export default function App() {
   const onDelete = useCallback(
     async (row: TimeRow) => {
       const timeids = DAYS.map((dk) => row.days[dk]?.timeid ?? "");
-      setStatus("mutation", "Deleting…", StatusKind.Mutation);
+      setStatus(StatusId.Mutation, "Deleting…", StatusKind.Mutation);
 
       for (const [key, timer] of saveTimersRef.current.entries()) {
         if (key.startsWith(row.rowKey)) {
@@ -157,7 +162,11 @@ export default function App() {
       try {
         dispatch({ type: APP_ACTION_TYPE.RemoveRow, rowKey: row.rowKey });
         await deleteRow(timeids);
-        setTransientStatus("mutation", "✓ Row deleted", StatusKind.Success);
+        setTransientStatus(
+          StatusId.Mutation,
+          "✓ Row deleted",
+          StatusKind.Success,
+        );
         const fresh = await loadWeek(state.weekISO);
         await setCached(state.weekISO, fresh);
       } catch (err) {

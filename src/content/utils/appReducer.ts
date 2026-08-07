@@ -3,6 +3,7 @@ import {
   StatusKind,
   type StatusEntry,
 } from "../components/atoms/StatusBar/StatusBar";
+import { StatusId } from "../constants/statusId";
 import { getMondayISO, todayISO } from "@/lib/dates";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
 
@@ -31,7 +32,11 @@ export const initialState: State = {
   weekData: null,
   refreshing: false,
   statuses: {
-    init: { id: "init", msg: "Initializing…", kind: StatusKind.Fetch },
+    [StatusId.Init]: {
+      id: StatusId.Init,
+      msg: "Initializing…",
+      kind: StatusKind.Fetch,
+    },
   },
   initialized: false,
 };
