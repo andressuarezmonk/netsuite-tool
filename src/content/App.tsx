@@ -250,6 +250,7 @@ export default function App() {
         onPrev={() => navigate(addDays(state.weekISO, -7))}
         onNext={() => navigate(addDays(state.weekISO, 7))}
         onToday={() => navigate(getMondayISO(todayISO()))}
+        onJump={navigate}
         refreshing={state.refreshing}
       />
 

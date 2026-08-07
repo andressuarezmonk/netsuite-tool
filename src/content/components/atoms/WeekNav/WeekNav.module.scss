@@ -1,4 +1,4 @@
-@use '../../../styles/variables' as *;
+@use "../../../styles/variables" as *;
 
 .nav {
   display: flex;
@@ -16,18 +16,91 @@
     cursor: pointer;
     font-size: 13px;
     color: #444;
-    transition: border-color $t, color $t;
+    white-space: nowrap;
+    transition:
+      border-color $t,
+      color $t;
 
-    &:hover { border-color: $primary; color: $primary; }
+    &:hover {
+      border-color: $primary;
+      color: $primary;
+    }
   }
 }
 
-.label {
+// The <label> wraps both the real input and the visible label text.
+.labelWrap {
+  position: relative;
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  // Clip the input so it never leaks outside and blocks adjacent buttons
+  overflow: hidden;
+  border-radius: $radius;
+}
+
+// The real <input type="week"> — fills the label wrapper exactly.
+// opacity: 0 hides the browser chrome but keeps it fully clickable.
+.weekInput {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  height: 100%;
+  width: 220px;
+  opacity: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  z-index: 1;
+
+  &::-webkit-calendar-picker-indicator {
+    // Stretch the picker indicator to cover the whole element
+    // so clicking anywhere on the label opens the picker
+    opacity: 0;
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+}
+
+// Purely visual label rendered on top of the input
+.labelText {
+  position: relative;
+  z-index: 0;
   font-weight: 600;
   font-size: 14px;
   min-width: 220px;
   text-align: center;
-  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1.5px solid transparent;
+  border-radius: $radius;
+  color: #444;
+  pointer-events: none;
+  transition:
+    border-color $t,
+    background $t,
+    color $t;
+}
+
+// Hover: triggered by hovering the labelWrap (the label element)
+.labelWrap:hover .labelText {
+  border-color: $primary;
+  color: $primary;
+  background: rgba($primary, 0.05);
+}
+
+.calIcon {
+  font-size: 13px;
+  opacity: 0.6;
 }
 
 .todayBtn {
@@ -35,5 +108,7 @@
   color: white !important;
   border-color: $primary !important;
 
-  &:hover { background: $primary-dark !important; }
+  &:hover {
+    background: $primary-dark !important;
+  }
 }
