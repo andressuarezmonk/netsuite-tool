@@ -1,9 +1,7 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
-import { DAYS, getNSBaseUrl, type DayKey } from "@/lib/constants";
-import { loadInit, loadWeek, saveRow, deleteRow } from "@/lib/api";
-import { setCached, evictOldWeeks } from "@/lib/cache";
-import { mergeWeekData } from "@/lib/merge";
-import { registerSave, waitForRowSave } from "@/lib/rowGate";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { getNSBaseUrl } from "@/lib/constants";
+import { loadInit } from "@/lib/api";
+import { evictOldWeeks } from "@/lib/cache";
 import type { TimeRow } from "@/lib/types";
 import WeekGrid from "./components/blocks/WeekGrid/WeekGrid";
 import WeekNav from "./components/atoms/WeekNav/WeekNav";
@@ -15,13 +13,10 @@ import { AppStateContext, AppActionsContext } from "./context/AppContext";
 import { createStatusActions } from "./utils/statusActions";
 import { StatusId } from "./constants/statusId";
 import { useWeekCache } from "./cache/useWeekCache";
+import { useRowMutations } from "./hooks/useRowMutations";
 
 export default function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-
-  const saveTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
-    new Map(),
-  );
 
   const { setStatus, clearStatus, setTransientStatus } = useMemo(
     () => createStatusActions(dispatch),
@@ -34,6 +29,14 @@ export default function App() {
     localEditsRef,
     activeWeekRef,
   } = useWeekCache(dispatch, { setStatus, clearStatus });
+
+  const { onSave, onDelete } = useRowMutations({
+    dispatch,
+    weekISO: state.weekISO,
+    statusActions: { setStatus, setTransientStatus },
+    currentWeekDataRef,
+    localEditsRef,
+  });
 
   // Keep currentWeekDataRef in sync so background merges use the latest data
   useEffect(() => {
@@ -50,13 +53,12 @@ export default function App() {
         await loadWeekWithCache(state.weekISO);
       } catch (err) {
         setStatus(
-          "init",
+          StatusId.Init,
           `Init failed: ${(err as Error).message}`,
           StatusKind.Error,
         );
       }
     };
-
     initialFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -68,132 +70,6 @@ export default function App() {
       loadWeekWithCache(mondayISO);
     },
     [loadWeekWithCache, activeWeekRef],
-  );
-
-  const onSave = useCallback(
-    async (row: TimeRow, dayKey: DayKey, hours: number, memo: string) => {
-      const cellKey = `${row.rowKey}_${dayKey}`;
-      const editKey = `${row.projId}_${row.taskId}_${dayKey}`;
-
-      if (hours > 0) localEditsRef.current.set(editKey, hours);
-      else localEditsRef.current.delete(editKey);
-
-      const existing = saveTimersRef.current.get(cellKey);
-      if (existing) clearTimeout(existing);
-
-      return new Promise<void>((resolve, reject) => {
-        const timer = setTimeout(async () => {
-          saveTimersRef.current.delete(cellKey);
-          setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
-
-          const savePromise = (async () => {
-            await saveRow({
-              projId: row.projId,
-              projRaw: row.projRaw,
-              taskId: row.taskId,
-              taskRaw: row.taskRaw,
-              itemId: row.itemId,
-              weekISO: state.weekISO,
-              dayKey,
-              hours,
-              memo,
-              timeid: row.days[dayKey]?.timeid ?? "",
-            });
-            localEditsRef.current.delete(editKey);
-            setTransientStatus(
-              StatusId.Mutation,
-              "✓ Saved",
-              StatusKind.Success,
-            );
-            const fresh = await loadWeek(state.weekISO);
-            await setCached(state.weekISO, fresh);
-            dispatch({
-              type: APP_ACTION_TYPE.SetData,
-              data: mergeWeekData(
-                currentWeekDataRef.current ?? fresh,
-                fresh,
-                localEditsRef.current,
-              ),
-            });
-          })();
-
-          registerSave(row.rowKey, savePromise);
-
-          try {
-            await savePromise;
-            resolve();
-          } catch (err) {
-            localEditsRef.current.delete(editKey);
-            setTransientStatus(
-              "mutation",
-              `Save failed: ${(err as Error).message}`,
-              StatusKind.Error,
-            );
-            reject(err);
-          }
-        }, 400);
-
-        saveTimersRef.current.set(cellKey, timer);
-      });
-    },
-    [
-      state.weekISO,
-      setStatus,
-      setTransientStatus,
-      localEditsRef,
-      currentWeekDataRef,
-    ],
-  );
-
-  const onDelete = useCallback(
-    async (row: TimeRow) => {
-      const timeids = DAYS.map((dk) => row.days[dk]?.timeid ?? "");
-      setStatus(StatusId.Mutation, "Deleting…", StatusKind.Mutation);
-
-      for (const [key, timer] of saveTimersRef.current.entries()) {
-        if (key.startsWith(row.rowKey)) {
-          clearTimeout(timer);
-          saveTimersRef.current.delete(key);
-        }
-      }
-
-      await waitForRowSave(row.rowKey);
-
-      try {
-        dispatch({ type: APP_ACTION_TYPE.RemoveRow, rowKey: row.rowKey });
-        await deleteRow(timeids);
-        setTransientStatus(
-          StatusId.Mutation,
-          "✓ Row deleted",
-          StatusKind.Success,
-        );
-        const fresh = await loadWeek(state.weekISO);
-        await setCached(state.weekISO, fresh);
-      } catch (err) {
-        setTransientStatus(
-          "mutation",
-          `Delete failed: ${(err as Error).message}`,
-          StatusKind.Error,
-        );
-        const fresh = await loadWeek(state.weekISO);
-        await setCached(state.weekISO, fresh);
-        dispatch({
-          type: APP_ACTION_TYPE.SetData,
-          data: mergeWeekData(
-            currentWeekDataRef.current ?? fresh,
-            fresh,
-            localEditsRef.current,
-          ),
-        });
-      }
-    },
-    [
-      state.weekISO,
-      setStatus,
-      setTransientStatus,
-      currentWeekDataRef,
-      localEditsRef,
-    ],
   );
 
   const onAddRow = useCallback((row: TimeRow) => {
