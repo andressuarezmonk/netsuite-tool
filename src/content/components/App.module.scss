@@ -1,16 +1,22 @@
-@use '../styles/variables' as *;
+@use "../styles/variables" as *;
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 .root {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 13px;
   color: $text;
   max-width: 1280px;
   margin: 0 auto;
   background: $surface;
   border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, .09);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.09);
   overflow: hidden;
 }
 
@@ -22,20 +28,29 @@
   align-items: center;
   justify-content: space-between;
 
-  h1 { font-size: 16px; font-weight: 700; }
+  h1 {
+    font-size: 16px;
+    font-weight: 700;
+  }
 }
 
-.subtitle { font-size: 11px; opacity: .55; margin-top: 2px; }
+.subtitle {
+  font-size: 11px;
+  opacity: 0.55;
+  margin-top: 2px;
+}
 
 .linkBtn {
   background: none;
   border: none;
-  color: rgba(white, .5);
+  color: rgba(white, 0.5);
   font-size: 11px;
   cursor: pointer;
   transition: color $t;
 
-  &:hover { color: white; }
+  &:hover {
+    color: white;
+  }
 }
 
 .footer {
@@ -45,5 +60,8 @@
   color: $text-light;
   text-align: right;
 
-  a { color: $primary; text-decoration: none; }
+  a {
+    color: $primary;
+    text-decoration: none;
+  }
 }

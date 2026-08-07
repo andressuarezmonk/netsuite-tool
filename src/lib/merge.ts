@@ -21,9 +21,7 @@ export function mergeWeekData(
   fresh: WeekData,
   localEdits: Map<string, number>,
 ): WeekData {
-  const freshRowMap = new Map(
-    fresh.rows.map((r) => [r.rowKey, r]),
-  );
+  const freshRowMap = new Map(fresh.rows.map((r) => [r.rowKey, r]));
   const resultRows: TimeRow[] = [];
 
   // Process rows that are currently displayed

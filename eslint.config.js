@@ -1,9 +1,10 @@
-import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooks from 'eslint-plugin-react-hooks';
-import reactRefresh from 'eslint-plugin-react-refresh';
+import js from "@eslint/js";
+import tsPlugin from "@typescript-eslint/eslint-plugin";
+import tsParser from "@typescript-eslint/parser";
+import reactPlugin from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import prettierConfig from "eslint-config-prettier";
 
 export default [
   // Base JS rules
@@ -88,6 +89,9 @@ export default [
 
   // Ignore built output and config files
   {
-    ignores: ['dist/**', 'node_modules/**', 'eslint.config.js', 'vite.config.ts'],
+    ignores: ["dist/**", "node_modules/**", "eslint.config.js", "vite.config.ts"],
   },
+
+  // Prettier last — disables ESLint rules that conflict with Prettier formatting
+  prettierConfig,
 ];

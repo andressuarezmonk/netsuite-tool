@@ -1,7 +1,11 @@
-@use '../../../styles/variables' as *;
+@use "../../../styles/variables" as *;
 
-.cell { text-align: center; }
-.today { background: #fffbe6 !important; }
+.cell {
+  text-align: center;
+}
+.today {
+  background: #fffbe6 !important;
+}
 
 .input {
   width: 62px;
@@ -12,12 +16,32 @@
   font-size: 13px;
   font-family: inherit;
   background: $surface;
-  transition: border-color $t, opacity $t;
+  transition:
+    border-color $t,
+    opacity $t;
 
-  &:focus { outline: none; border-color: $primary; }
+  &:focus {
+    outline: none;
+    border-color: $primary;
+  }
 
-  &Approved  { background: $bg-approved;  border-color: $border-approved;  color: $color-approved;  cursor: not-allowed; }
-  &Submitted { background: $bg-submitted; border-color: $border-submitted; color: $color-submitted; cursor: not-allowed; }
-  &HasValue  { border-color: $border-submitted; background: #f0f6ff; }
-  &Saving    { opacity: .5; }
+  &Approved {
+    background: $bg-approved;
+    border-color: $border-approved;
+    color: $color-approved;
+    cursor: not-allowed;
+  }
+  &Submitted {
+    background: $bg-submitted;
+    border-color: $border-submitted;
+    color: $color-submitted;
+    cursor: not-allowed;
+  }
+  &HasValue {
+    border-color: $border-submitted;
+    background: #f0f6ff;
+  }
+  &Saving {
+    opacity: 0.5;
+  }
 }

@@ -1,15 +1,26 @@
-import { useEffect, useRef, useState } from 'react';
-import { formatHours } from '@/lib/dates';
-import type { CellProps } from '../../types';
-import s from './DayCell.module.scss';
+import { useEffect, useRef, useState } from "react";
+import type { TimeRow } from "@/lib/types";
+import type { DayKey } from "@/lib/constants";
+import { formatHours } from "@/lib/dates";
+import { useAppActions } from "../../../context/AppContext";
+import s from "./DayCell.module.scss";
 
-export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
+interface Props {
+  row: TimeRow;
+  dayKey: DayKey;
+  isToday: boolean;
+}
+
+export default function DayCell({ row, dayKey, isToday }: Props) {
+  const { onSave } = useAppActions();
   const entry = row.days[dayKey];
-  const [value, setValue]   = useState(entry?.hours !== undefined ? formatHours(entry.hours) : '');
+  const [value, setValue] = useState(
+    entry?.hours !== undefined ? formatHours(entry.hours) : "",
+  );
   const [saving, setSaving] = useState(false);
   const prevRef = useRef(value);
 
-  const freshVal = entry?.hours !== undefined ? formatHours(entry.hours) : '';
+  const freshVal = entry?.hours !== undefined ? formatHours(entry.hours) : "";
   useEffect(() => {
     if (freshVal !== prevRef.current && !saving) {
       setValue(freshVal);
@@ -17,7 +28,8 @@ export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
     }
   }, [freshVal, saving]);
 
-  const disabled = entry?.approved || entry?.submitted || entry?.disabled || false;
+  const disabled =
+    entry?.approved || entry?.submitted || entry?.disabled || false;
 
   const handleBlur = async () => {
     if (value === prevRef.current) return;
@@ -28,15 +40,18 @@ export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
       if (colonMatch) {
         hours = parseInt(colonMatch[1]) + parseInt(colonMatch[2]) / 60;
       } else {
-        hours = parseFloat(value.replace(/[^\d.]/g, ''));
+        hours = parseFloat(value.replace(/[^\d.]/g, ""));
       }
-      if (isNaN(hours) || hours < 0) { setValue(prevRef.current); return; }
+      if (isNaN(hours) || hours < 0) {
+        setValue(prevRef.current);
+        return;
+      }
     }
 
     setSaving(true);
     try {
-      await onSave(row, dayKey, hours, entry?.memo ?? '');
-      const newVal = hours !== undefined ? formatHours(hours) : '';
+      await onSave(row, dayKey, hours, entry?.memo ?? "");
+      const newVal = hours !== undefined ? formatHours(hours) : "";
       setValue(newVal);
       prevRef.current = newVal;
     } catch {
@@ -46,15 +61,17 @@ export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
     }
   };
 
-  const cellClass = [s.cell, isToday ? s.today : ''].filter(Boolean).join(' ');
+  const cellClass = [s.cell, isToday ? s.today : ""].filter(Boolean).join(" ");
 
   const inputClass = [
     s.input,
-    entry?.approved  ? s.inputApproved  : '',
-    entry?.submitted ? s.inputSubmitted : '',
-    !disabled && entry?.hours !== undefined ? s.inputHasValue : '',
-    saving ? s.inputSaving : '',
-  ].filter(Boolean).join(' ');
+    entry?.approved ? s.inputApproved : "",
+    entry?.submitted ? s.inputSubmitted : "",
+    !disabled && entry?.hours !== undefined ? s.inputHasValue : "",
+    saving ? s.inputSaving : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <td className={cellClass}>
@@ -62,14 +79,18 @@ export default function DayCell({ row, dayKey, isToday, onSave }: CellProps) {
         type="text"
         className={inputClass}
         value={value}
-        onChange={e => setValue(e.target.value)}
-        onFocus={() => { prevRef.current = value; }}
+        onChange={(e) => setValue(e.target.value)}
+        onFocus={() => {
+          prevRef.current = value;
+        }}
         onBlur={handleBlur}
         readOnly={disabled}
         title={
-          entry?.approved  ? 'Approved — cannot edit' :
-          entry?.submitted ? 'Submitted — pending approval' :
-          undefined
+          entry?.approved
+            ? "Approved — cannot edit"
+            : entry?.submitted
+              ? "Submitted — pending approval"
+              : undefined
         }
       />
     </td>

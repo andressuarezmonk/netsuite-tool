@@ -1,20 +1,24 @@
-import { createRoot } from 'react-dom/client';
-import { TARGET_SCRIPT, setHandlerScriptId } from '@/lib/constants';
-import App from './App';
+import { createRoot } from "react-dom/client";
+import { TARGET_SCRIPT, setHandlerScriptId } from "@/lib/constants";
+import App from "./App";
 
 const params = new URLSearchParams(window.location.search);
-if (params.get('script') === TARGET_SCRIPT) {
-  if (sessionStorage.getItem('ft_bypass')) {
-    sessionStorage.removeItem('ft_bypass');
+if (params.get("script") === TARGET_SCRIPT) {
+  if (sessionStorage.getItem("ft_bypass")) {
+    sessionStorage.removeItem("ft_bypass");
   } else {
     // Detect the handler script ID from the inner iframe before we wipe the page
-    const iframe = document.getElementById('wrapper-frame') as HTMLIFrameElement | null;
+    const iframe = document.getElementById(
+      "wrapper-frame",
+    ) as HTMLIFrameElement | null;
     if (iframe?.src) {
       try {
         const iframeParams = new URLSearchParams(new URL(iframe.src).search);
-        const appScriptId = parseInt(iframeParams.get('script') ?? '', 10);
+        const appScriptId = parseInt(iframeParams.get("script") ?? "", 10);
         if (!isNaN(appScriptId)) setHandlerScriptId(String(appScriptId - 1));
-      } catch { /* use default */ }
+      } catch {
+        /* use default */
+      }
     }
 
     chrome.storage.local.set({
@@ -25,12 +29,12 @@ if (params.get('script') === TARGET_SCRIPT) {
     // Scripts and meta tags are left untouched.
     document.head
       .querySelectorAll('link[rel="stylesheet"], style')
-      .forEach(el => el.remove());
+      .forEach((el) => el.remove());
 
     // Wipe the body and render directly — no Shadow DOM.
     // Vite injects our compiled CSS into <head> automatically.
-    document.body.innerHTML = '';
-    document.body.style.cssText = 'margin:0;padding:20px;background:#eef0f8;';
+    document.body.innerHTML = "";
+    document.body.style.cssText = "margin:0;padding:20px;background:#eef0f8;";
 
     createRoot(document.body).render(<App />);
   }

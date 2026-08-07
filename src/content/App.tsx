@@ -1,276 +1,287 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react';
-import { DAYS, getNSBaseUrl } from '@/lib/constants';
-import { addDays, getMondayISO, todayISO, weekRangeLabel } from '@/lib/dates';
-import { loadInit, loadWeek, saveRow, deleteRow } from '@/lib/api';
-import { getCached, setCached, evictOldWeeks } from '@/lib/cache';
-import { mergeWeekData } from '@/lib/merge';
-import { registerSave, waitForRowSave } from '@/lib/rowGate';
-import type { WeekData, TimeRow } from '@/lib/types';
-import WeekGrid from './components/blocks/WeekGrid/WeekGrid';
-import WeekNav from './components/atoms/WeekNav/WeekNav';
-import AddRowBar from './components/blocks/AddRowBar/AddRowBar';
-import StatusBar, { type StatusEntry, type StatusKind } from './components/atoms/StatusBar/StatusBar';
-import styles from './components/App.module.scss';
-
-interface State {
-  weekISO: string;
-  weekData: WeekData | null;
-  refreshing: boolean;
-  statuses: Record<string, StatusEntry>;
-  initialized: boolean;
-}
-
-type Action =
-  | { type: 'SET_WEEK'; weekISO: string }
-  | { type: 'SET_DATA'; data: WeekData; refreshing?: boolean }
-  | { type: 'SET_STATUS'; entry: StatusEntry }
-  | { type: 'CLEAR_STATUS'; id: string }
-  | { type: 'SET_REFRESHING'; value: boolean }
-  | { type: 'INITIALIZED' }
-  | { type: 'ADD_ROW'; row: TimeRow }
-  | { type: 'REMOVE_ROW'; rowKey: string };
-
-function reducer(state: State, action: Action): State {
-  switch (action.type) {
-    case 'SET_WEEK':
-      return { ...state, weekISO: action.weekISO, weekData: null, refreshing: false };
-    case 'SET_DATA':
-      return { ...state, weekData: action.data, refreshing: action.refreshing ?? false };
-    case 'SET_STATUS':
-      return { ...state, statuses: { ...state.statuses, [action.entry.id]: action.entry } };
-    case 'CLEAR_STATUS': {
-      const next = { ...state.statuses };
-      delete next[action.id];
-      return { ...state, statuses: next };
-    }
-    case 'SET_REFRESHING':
-      return { ...state, refreshing: action.value };
-    case 'INITIALIZED':
-      return { ...state, initialized: true };
-    case 'ADD_ROW':
-      if (!state.weekData) return state;
-      return { ...state, weekData: { ...state.weekData, rows: [...state.weekData.rows, action.row] } };
-    case 'REMOVE_ROW':
-      if (!state.weekData) return state;
-      return {
-        ...state,
-        weekData: {
-          ...state.weekData,
-          rows: state.weekData.rows.filter(r => r.rowKey !== action.rowKey),
-        },
-      };
-    default: return state;
-  }
-}
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import { DAYS, getNSBaseUrl, type DayKey } from "@/lib/constants";
+import { getMondayISO, todayISO } from "@/lib/dates";
+import { loadInit, loadWeek, saveRow, deleteRow } from "@/lib/api";
+import { getCached, setCached, evictOldWeeks } from "@/lib/cache";
+import { mergeWeekData } from "@/lib/merge";
+import { registerSave, waitForRowSave } from "@/lib/rowGate";
+import type { WeekData, TimeRow } from "@/lib/types";
+import WeekGrid from "./components/blocks/WeekGrid/WeekGrid";
+import WeekNav from "./components/atoms/WeekNav/WeekNav";
+import AddRowBar from "./components/blocks/AddRowBar/AddRowBar";
+import StatusBar, { StatusKind } from "./components/atoms/StatusBar/StatusBar";
+import styles from "./components/App.module.scss";
+import { reducer, initialState, APP_ACTION_TYPE } from "./utils/appReducer";
+import { AppStateContext, AppActionsContext } from "./context/AppContext";
+import { createStatusActions } from "./utils/statusActions";
 
 export default function App() {
-  const [state, dispatch] = useReducer(reducer, {
-    weekISO: getMondayISO(todayISO()),
-    weekData: null,
-    refreshing: false,
-    statuses: { init: { id: 'init', msg: 'Initializing…', kind: 'fetch' } },
-    initialized: false,
-  });
+  const [state, dispatch] = useReducer(reducer, initialState);
 
-  const statusTimerRef    = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentWeekDataRef = useRef<WeekData | null>(null);
-  const localEditsRef     = useRef<Map<string, number>>(new Map());
-  const activeWeekRef     = useRef<string>(getMondayISO(todayISO()));
-  // Per-cell debounce timers: "rowKey_dayKey" -> timer handle
-  const saveTimersRef     = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const localEditsRef = useRef<Map<string, number>>(new Map());
+  const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
+  const saveTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
-  useEffect(() => { currentWeekDataRef.current = state.weekData; }, [state.weekData]);
+  useEffect(() => {
+    currentWeekDataRef.current = state.weekData;
+  }, [state.weekData]);
 
-  const setStatus = useCallback((id: string, msg: string, kind: StatusKind) => {
-    dispatch({ type: 'SET_STATUS', entry: { id, msg, kind } });
-  }, []);
+  // Status helpers — stable reference, created once with dispatch
+  const { setStatus, clearStatus, setTransientStatus } = useMemo(
+    () => createStatusActions(dispatch),
 
-  const clearStatus = useCallback((id: string) => {
-    dispatch({ type: 'CLEAR_STATUS', id });
-  }, []);
+    [],
+  );
 
-  const setTransientStatus = useCallback((id: string, msg: string, kind: StatusKind, ms = 2500) => {
-    dispatch({ type: 'SET_STATUS', entry: { id, msg, kind } });
-    if (statusTimerRef.current) clearTimeout(statusTimerRef.current);
-    statusTimerRef.current = setTimeout(() => dispatch({ type: 'CLEAR_STATUS', id }), ms);
-  }, []);
+  const loadWeekWithCache = useCallback(
+    async (mondayISO: string) => {
+      activeWeekRef.current = mondayISO;
+      localEditsRef.current = new Map();
 
-  const loadWeekWithCache = useCallback(async (mondayISO: string) => {
-    activeWeekRef.current = mondayISO;
-    localEditsRef.current = new Map();
-
-    const cached = await getCached(mondayISO);
-    if (activeWeekRef.current !== mondayISO) return;
-
-    if (cached) {
-      dispatch({ type: 'SET_DATA', data: cached, refreshing: true });
-      setStatus('cache', 'Loaded from cache — refreshing…', 'cache');
-    } else {
-      setStatus('fetch', 'Loading week data…', 'fetch');
-    }
-
-    try {
-      const fresh = await loadWeek(mondayISO);
-      if (activeWeekRef.current !== mondayISO) { await setCached(mondayISO, fresh); return; }
-      await setCached(mondayISO, fresh);
-      const displayed = currentWeekDataRef.current;
-      const merged = displayed ? mergeWeekData(displayed, fresh, localEditsRef.current) : fresh;
-      dispatch({ type: 'SET_DATA', data: merged, refreshing: false });
-      clearStatus('cache');
-      clearStatus('fetch');
-    } catch (err) {
+      const cached = await getCached(mondayISO);
       if (activeWeekRef.current !== mondayISO) return;
-      if (!cached) setStatus('fetch', `Failed to load: ${(err as Error).message}`, 'error');
-      else { setStatus('cache', '⚠ Refresh failed', 'error'); dispatch({ type: 'SET_REFRESHING', value: false }); }
-    }
-  }, [setStatus, clearStatus]);
+
+      if (cached) {
+        dispatch({
+          type: APP_ACTION_TYPE.SetData,
+          data: cached,
+          refreshing: true,
+        });
+        setStatus("cache", "Loaded from cache — refreshing…", StatusKind.Cache);
+      } else {
+        setStatus("fetch", "Loading week data…", StatusKind.Fetch);
+      }
+
+      try {
+        const fresh = await loadWeek(mondayISO);
+        if (activeWeekRef.current !== mondayISO) {
+          await setCached(mondayISO, fresh);
+          return;
+        }
+        await setCached(mondayISO, fresh);
+        const displayed = currentWeekDataRef.current;
+        const merged = displayed
+          ? mergeWeekData(displayed, fresh, localEditsRef.current)
+          : fresh;
+        dispatch({
+          type: APP_ACTION_TYPE.SetData,
+          data: merged,
+          refreshing: false,
+        });
+        clearStatus("cache");
+        clearStatus("fetch");
+      } catch (err) {
+        if (activeWeekRef.current !== mondayISO) return;
+        if (!cached)
+          setStatus(
+            "fetch",
+            `Failed to load: ${(err as Error).message}`,
+            StatusKind.Error,
+          );
+        else {
+          setStatus("cache", "⚠ Refresh failed", StatusKind.Error);
+          dispatch({ type: APP_ACTION_TYPE.SetRefreshing, value: false });
+        }
+      }
+    },
+    [setStatus, clearStatus],
+  );
 
   useEffect(() => {
     (async () => {
       try {
         evictOldWeeks();
         await loadInit();
-        dispatch({ type: 'INITIALIZED' });
-        clearStatus('init');
+        dispatch({ type: APP_ACTION_TYPE.Initialized });
+        clearStatus("init");
         await loadWeekWithCache(state.weekISO);
       } catch (err) {
-        setStatus('init', `Init failed: ${(err as Error).message}`, 'error');
+        setStatus(
+          "init",
+          `Init failed: ${(err as Error).message}`,
+          StatusKind.Error,
+        );
       }
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const navigate = useCallback((mondayISO: string) => {
-    activeWeekRef.current = mondayISO;
-    dispatch({ type: 'SET_WEEK', weekISO: mondayISO });
-    loadWeekWithCache(mondayISO);
-  }, [loadWeekWithCache]);
+  const navigate = useCallback(
+    (mondayISO: string) => {
+      activeWeekRef.current = mondayISO;
+      dispatch({ type: APP_ACTION_TYPE.SetWeek, weekISO: mondayISO });
+      loadWeekWithCache(mondayISO);
+    },
+    [loadWeekWithCache],
+  );
 
-  const handleSave = useCallback(async (
-    row: TimeRow, dayKey: typeof DAYS[number], hours: number, memo: string,
-  ) => {
-    const cellKey = `${row.rowKey}_${dayKey}`;
-    const editKey = `${row.projId}_${row.taskId}_${dayKey}`;
+  const onSave = useCallback(
+    async (row: TimeRow, dayKey: DayKey, hours: number, memo: string) => {
+      const cellKey = `${row.rowKey}_${dayKey}`;
+      const editKey = `${row.projId}_${row.taskId}_${dayKey}`;
 
-    // Track the intended value immediately so background refreshes don't overwrite it
-    if (hours > 0) localEditsRef.current.set(editKey, hours);
-    else localEditsRef.current.delete(editKey);
+      if (hours > 0) localEditsRef.current.set(editKey, hours);
+      else localEditsRef.current.delete(editKey);
 
-    // Debounce: if the user edits this cell again within 400ms, cancel and restart
-    const existing = saveTimersRef.current.get(cellKey);
-    if (existing) clearTimeout(existing);
+      const existing = saveTimersRef.current.get(cellKey);
+      if (existing) clearTimeout(existing);
 
-    return new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(async () => {
-        saveTimersRef.current.delete(cellKey);
-        setStatus('mutation', 'Saving…', 'mutation');
+      return new Promise<void>((resolve, reject) => {
+        const timer = setTimeout(async () => {
+          saveTimersRef.current.delete(cellKey);
+          setStatus("mutation", "Saving…", StatusKind.Mutation);
 
-        const savePromise = (async () => {
-          await saveRow({
-            projId: row.projId, projRaw: row.projRaw,
-            taskId: row.taskId, taskRaw: row.taskRaw,
-            itemId: row.itemId, weekISO: state.weekISO,
-            dayKey, hours, memo, timeid: row.days[dayKey]?.timeid ?? '',
-          });
-          localEditsRef.current.delete(editKey);
-          setTransientStatus('mutation', '✓ Saved', 'success');
-          const fresh = await loadWeek(state.weekISO);
-          await setCached(state.weekISO, fresh);
-          dispatch({ type: 'SET_DATA', data: mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current) });
-        })();
+          const savePromise = (async () => {
+            await saveRow({
+              projId: row.projId,
+              projRaw: row.projRaw,
+              taskId: row.taskId,
+              taskRaw: row.taskRaw,
+              itemId: row.itemId,
+              weekISO: state.weekISO,
+              dayKey,
+              hours,
+              memo,
+              timeid: row.days[dayKey]?.timeid ?? "",
+            });
+            localEditsRef.current.delete(editKey);
+            setTransientStatus("mutation", "✓ Saved", StatusKind.Success);
+            const fresh = await loadWeek(state.weekISO);
+            await setCached(state.weekISO, fresh);
+            dispatch({
+              type: APP_ACTION_TYPE.SetData,
+              data: mergeWeekData(
+                currentWeekDataRef.current ?? fresh,
+                fresh,
+                localEditsRef.current,
+              ),
+            });
+          })();
 
-        // Register with the gate so deletes on this row can wait for us
-        registerSave(row.rowKey, savePromise);
+          registerSave(row.rowKey, savePromise);
 
-        try {
-          await savePromise;
-          resolve();
-        } catch (err) {
-          localEditsRef.current.delete(editKey);
-          setTransientStatus('mutation', `Save failed: ${(err as Error).message}`, 'error');
-          reject(err);
+          try {
+            await savePromise;
+            resolve();
+          } catch (err) {
+            localEditsRef.current.delete(editKey);
+            setTransientStatus(
+              "mutation",
+              `Save failed: ${(err as Error).message}`,
+              StatusKind.Error,
+            );
+            reject(err);
+          }
+        }, 400);
+
+        saveTimersRef.current.set(cellKey, timer);
+      });
+    },
+    [state.weekISO, setStatus, setTransientStatus],
+  );
+
+  const onDelete = useCallback(
+    async (row: TimeRow) => {
+      const timeids = DAYS.map((dk) => row.days[dk]?.timeid ?? "");
+      setStatus("mutation", "Deleting…", StatusKind.Mutation);
+
+      for (const [key, timer] of saveTimersRef.current.entries()) {
+        if (key.startsWith(row.rowKey)) {
+          clearTimeout(timer);
+          saveTimersRef.current.delete(key);
         }
-      }, 400);
-
-      saveTimersRef.current.set(cellKey, timer);
-    });
-  }, [state.weekISO, setStatus, setTransientStatus]);
-
-  const handleDelete = useCallback(async (row: TimeRow) => {
-    const timeids = DAYS.map(dk => row.days[dk]?.timeid ?? '');
-    setStatus('mutation', 'Deleting…', 'mutation');
-
-    // Cancel any pending debounced save for cells in this row
-    for (const [key, timer] of saveTimersRef.current.entries()) {
-      if (key.startsWith(row.rowKey)) {
-        clearTimeout(timer);
-        saveTimersRef.current.delete(key);
       }
-    }
 
-    // Wait for any in-flight save to complete before deleting
-    await waitForRowSave(row.rowKey);
+      await waitForRowSave(row.rowKey);
 
-    try {
-      dispatch({ type: 'REMOVE_ROW', rowKey: row.rowKey });
-      await deleteRow(timeids);
-      setTransientStatus('mutation', '✓ Row deleted', 'success');
-      const fresh = await loadWeek(state.weekISO);
-      await setCached(state.weekISO, fresh);
-    } catch (err) {
-      setTransientStatus('mutation', `Delete failed: ${(err as Error).message}`, 'error');
-      const fresh = await loadWeek(state.weekISO);
-      await setCached(state.weekISO, fresh);
-      dispatch({ type: 'SET_DATA', data: mergeWeekData(currentWeekDataRef.current ?? fresh, fresh, localEditsRef.current) });
-    }
-  }, [state.weekISO, setStatus, setTransientStatus]);
+      try {
+        dispatch({ type: APP_ACTION_TYPE.RemoveRow, rowKey: row.rowKey });
+        await deleteRow(timeids);
+        setTransientStatus("mutation", "✓ Row deleted", StatusKind.Success);
+        const fresh = await loadWeek(state.weekISO);
+        await setCached(state.weekISO, fresh);
+      } catch (err) {
+        setTransientStatus(
+          "mutation",
+          `Delete failed: ${(err as Error).message}`,
+          StatusKind.Error,
+        );
+        const fresh = await loadWeek(state.weekISO);
+        await setCached(state.weekISO, fresh);
+        dispatch({
+          type: APP_ACTION_TYPE.SetData,
+          data: mergeWeekData(
+            currentWeekDataRef.current ?? fresh,
+            fresh,
+            localEditsRef.current,
+          ),
+        });
+      }
+    },
+    [state.weekISO, setStatus, setTransientStatus],
+  );
 
-  const handleAddRow = useCallback((row: TimeRow) => {
-    dispatch({ type: 'ADD_ROW', row });
+  const onAddRow = useCallback((row: TimeRow) => {
+    dispatch({ type: APP_ACTION_TYPE.AddRow, row });
   }, []);
+
+  const stateValue = useMemo(
+    () => ({
+      weekISO: state.weekISO,
+      weekData: state.weekData,
+      refreshing: state.refreshing,
+      statuses: state.statuses,
+      initialized: state.initialized,
+    }),
+    [state],
+  );
+
+  const actionsValue = useMemo(
+    () => ({
+      dispatch,
+      navigate,
+      onSave,
+      onDelete,
+      onAddRow,
+      setStatus,
+      clearStatus,
+    }),
+    [navigate, onSave, onDelete, onAddRow, setStatus, clearStatus],
+  );
 
   return (
-    <div className={styles.root}>
-      <header className={styles.header}>
-        <div>
-          <h1>⏱ Weekly Time Entry</h1>
-          <p className={styles.subtitle}>NetSuite — fast entry</p>
+    <AppStateContext.Provider value={stateValue}>
+      <AppActionsContext.Provider value={actionsValue}>
+        <div className={styles.root}>
+          <header className={styles.header}>
+            <div>
+              <h1>⏱ Weekly Time Entry</h1>
+              <p className={styles.subtitle}>NetSuite — fast entry</p>
+            </div>
+            <button
+              className={styles.linkBtn}
+              onClick={() => {
+                sessionStorage.setItem("ft_bypass", "1");
+                window.location.reload();
+              }}
+            >
+              Load original page →
+            </button>
+          </header>
+
+          <WeekNav />
+          <StatusBar />
+          <WeekGrid />
+          {state.initialized && <AddRowBar />}
+
+          <footer className={styles.footer}>
+            Fast Time Tracker · <a href={getNSBaseUrl()}>NetSuite Home</a>
+          </footer>
         </div>
-        <button className={styles.linkBtn} onClick={() => {
-          sessionStorage.setItem('ft_bypass', '1');
-          window.location.reload();
-        }}>
-          Load original page →
-        </button>
-      </header>
-
-      <WeekNav
-        weekISO={state.weekISO}
-        label={weekRangeLabel(state.weekISO)}
-        onPrev={() => navigate(addDays(state.weekISO, -7))}
-        onNext={() => navigate(addDays(state.weekISO, 7))}
-        onToday={() => navigate(getMondayISO(todayISO()))}
-        onJump={navigate}
-        refreshing={state.refreshing}
-      />
-
-      <StatusBar statuses={Object.values(state.statuses)} />
-
-      <WeekGrid
-        weekData={state.weekData}
-        weekISO={state.weekISO}
-        onSave={handleSave}
-        onDelete={handleDelete}
-      />
-
-      {state.initialized && (
-        <AddRowBar weekISO={state.weekISO} onAdd={handleAddRow} />
-      )}
-
-      <footer className={styles.footer}>
-        Fast Time Tracker ·{' '}
-        <a href={getNSBaseUrl()}>NetSuite Home</a>
-      </footer>
-    </div>
+      </AppActionsContext.Provider>
+    </AppStateContext.Provider>
   );
 }

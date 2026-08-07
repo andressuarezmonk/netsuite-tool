@@ -1,5 +1,7 @@
-@use '../../../styles/variables' as *;
+@use "../../../styles/variables" as *;
 
 // DayTotals uses the table's tfoot styles defined in index.module.scss.
 // This file exists as a placeholder for any DayTotals-specific overrides.
-.today { background: #fffbe6 !important; }
+.today {
+  background: #fffbe6 !important;
+}

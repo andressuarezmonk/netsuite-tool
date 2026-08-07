@@ -1,4 +1,4 @@
-@use '../../../styles/variables' as *;
+@use "../../../styles/variables" as *;
 
 .bar {
   padding: 10px $pad-x;
@@ -17,14 +17,27 @@
     font-family: inherit;
     background: $surface;
 
-    &:focus { outline: none; border-color: $primary; }
+    &:focus {
+      outline: none;
+      border-color: $primary;
+    }
   }
 }
 
-.projSelect { min-width: 200px; }
-.taskSelect { min-width: 180px; }
-.loading    { font-size: 12px; color: $text-muted; }
-.error      { font-size: 12px; color: $color-error; }
+.projSelect {
+  min-width: 200px;
+}
+.taskSelect {
+  min-width: 180px;
+}
+.loading {
+  font-size: 12px;
+  color: $text-muted;
+}
+.error {
+  font-size: 12px;
+  color: $color-error;
+}
 
 .addBtn {
   background: $primary;
@@ -35,10 +48,17 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background $t, opacity $t;
+  transition:
+    background $t,
+    opacity $t;
 
-  &:hover:not(:disabled) { background: $primary-dark; }
-  &:disabled { opacity: .4; cursor: not-allowed; }
+  &:hover:not(:disabled) {
+    background: $primary-dark;
+  }
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 // Spinner reuse (imported from StatusBar context via shadow root)

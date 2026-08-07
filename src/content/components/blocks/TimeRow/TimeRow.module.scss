@@ -1,4 +1,4 @@
-@use '../../../styles/variables' as *;
+@use "../../../styles/variables" as *;
 
 .delBtn {
   background: none;
@@ -9,8 +9,16 @@
   cursor: pointer;
   padding: 2px 4px;
   border-radius: 4px;
-  transition: color $t, background $t;
+  transition:
+    color $t,
+    background $t;
 
-  &:hover:not(:disabled) { color: $color-error; background: $bg-error; }
-  &:disabled { cursor: not-allowed; opacity: .35; }
+  &:hover:not(:disabled) {
+    color: $color-error;
+    background: $bg-error;
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+  }
 }

@@ -1,7 +1,8 @@
-import React from 'react';
-import s from './StatusBar.module.scss';
+import { useAppState } from "../../../context/AppContext";
+import { StatusKind } from "../../../constants/statusKind";
+import s from "./StatusBar.module.scss";
 
-export type StatusKind = 'cache' | 'fetch' | 'mutation' | 'success' | 'error' | '';
+export { StatusKind };
 
 export interface StatusEntry {
   id: string;
@@ -9,36 +10,41 @@ export interface StatusEntry {
   kind: StatusKind;
 }
 
-interface Props {
-  statuses: StatusEntry[];
-}
-
 const KIND_LABEL: Partial<Record<StatusKind, string>> = {
-  cache:    'Cache',
-  fetch:    'Fetching',
-  mutation: 'Saving',
+  [StatusKind.Cache]: "Cache",
+  [StatusKind.Fetch]: "Fetching",
+  [StatusKind.Mutation]: "Saving",
 };
 
-// Map kind to the CSS module class name
 const KIND_CLASS: Record<StatusKind, string> = {
-  cache:    s.statusCache    ?? '',
-  fetch:    s.statusFetch    ?? '',
-  mutation: s.statusMutation ?? '',
-  success:  s.statusSuccess  ?? '',
-  error:    s.statusError    ?? '',
-  '':       '',
+  [StatusKind.Cache]: s.statusCache ?? "",
+  [StatusKind.Fetch]: s.statusFetch ?? "",
+  [StatusKind.Mutation]: s.statusMutation ?? "",
+  [StatusKind.Success]: s.statusSuccess ?? "",
+  [StatusKind.Error]: s.statusError ?? "",
+  [StatusKind.None]: "",
 };
 
-export default function StatusBar({ statuses }: Props) {
-  const visible = statuses.filter(st => st.msg);
+const SPINNER_KINDS: StatusKind[] = [
+  StatusKind.Cache,
+  StatusKind.Fetch,
+  StatusKind.Mutation,
+];
+
+export default function StatusBar() {
+  const { statuses } = useAppState();
+  const visible = Object.values(statuses).filter((st) => st.msg);
   if (visible.length === 0) return null;
 
   return (
     <div className={s.bar}>
-      {visible.map(st => (
+      {visible.map((st) => (
         <div key={st.id} className={`${s.status} ${KIND_CLASS[st.kind]}`}>
-          {(st.kind === 'cache' || st.kind === 'fetch' || st.kind === 'mutation') && (
-            <span className={`${s.spinner} ${s.spinnerSm}`} aria-hidden="true" />
+          {SPINNER_KINDS.includes(st.kind) && (
+            <span
+              className={`${s.spinner} ${s.spinnerSm}`}
+              aria-hidden="true"
+            />
           )}
           {KIND_LABEL[st.kind] && (
             <span className={s.label}>{KIND_LABEL[st.kind]}</span>

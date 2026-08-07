@@ -1,22 +1,15 @@
-import { DAYS } from '@/lib/constants';
-import { addDays, todayISO } from '@/lib/dates';
-import type { WeekData } from '@/lib/types';
-import TimeRow from '../TimeRow/TimeRow';
-import DayTotals from '../DayTotals/DayTotals';
-import type { OnSave, OnDelete } from '../../types';
-import styles from './WeekGrid.module.scss';
+import { DAYS } from "@/lib/constants";
+import { addDays, todayISO } from "@/lib/dates";
+import TimeRow from "../TimeRow/TimeRow";
+import DayTotals from "../DayTotals/DayTotals";
+import { useAppState } from "../../../context/AppContext";
+import styles from "./WeekGrid.module.scss";
 
-const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-interface Props {
-  weekData: WeekData | null;
-  weekISO: string;
-  onSave: OnSave;
-  onDelete: OnDelete;
-}
-
-export default function WeekGrid({ weekData, weekISO, onSave, onDelete }: Props) {
-  const today    = todayISO();
+export default function WeekGrid() {
+  const { weekData, weekISO } = useAppState();
+  const today = todayISO();
   const dayDates = DAYS.map((_, i) => addDays(weekISO, i));
 
   if (!weekData) return null;
@@ -31,11 +24,11 @@ export default function WeekGrid({ weekData, weekISO, onSave, onDelete }: Props)
             {DAYS.map((_, i) => (
               <th
                 key={DAYS[i]}
-                className={`${styles.colDay}${dayDates[i] === today ? ` ${styles.today}` : ''}`}
+                className={`${styles.colDay}${dayDates[i] === today ? ` ${styles.today}` : ""}`}
               >
                 {DAY_LABELS[i]}
                 <span className={styles.dayDate}>
-                  {dayDates[i].slice(5).replace('-', '/')}
+                  {dayDates[i].slice(5).replace("-", "/")}
                 </span>
               </th>
             ))}
@@ -51,14 +44,12 @@ export default function WeekGrid({ weekData, weekISO, onSave, onDelete }: Props)
               </td>
             </tr>
           ) : (
-            weekData.rows.map(row => (
+            weekData.rows.map((row) => (
               <TimeRow
                 key={row.rowKey}
                 row={row}
                 dayDates={dayDates}
                 today={today}
-                onSave={onSave}
-                onDelete={onDelete}
               />
             ))
           )}
