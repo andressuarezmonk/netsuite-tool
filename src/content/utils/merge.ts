@@ -1,3 +1,6 @@
+import type { WeekData, TimeRow, DayEntry } from "./types";
+import { DAYS, type DayKey } from "./constants";
+
 /**
  * Merges fresh server data into currently-displayed data.
  *
@@ -9,18 +12,51 @@
  * - Rows that disappeared from the server are kept (user may have added them locally)
  */
 
-import type { WeekData, TimeRow, DayEntry } from "./types";
-import { DAYS, type DayKey } from "./constants";
+/**
+ * Keeps the user's locally typed hours but updates server-side metadata
+ * (timeid, approval flags) from the fresh response if available.
+ */
+const preserveLocalEditWithFreshMetadata = (
+  displayedDayEntry: DayEntry,
+  freshDayEntry: DayEntry | undefined,
+  localHours: number,
+): DayEntry => ({
+  ...displayedDayEntry,
+  hours: localHours,
+  timeid: freshDayEntry?.timeid ?? displayedDayEntry.timeid,
+  approved: freshDayEntry?.approved ?? displayedDayEntry.approved,
+  submitted: freshDayEntry?.submitted ?? displayedDayEntry.submitted,
+  disabled: freshDayEntry?.disabled ?? displayedDayEntry.disabled,
+});
+
+/**
+ * Produce a fresh DayEntry with updated server metadata but preserved local hours.
+ * Used when the server confirms a save (we get back a timeid).
+ */
+export const patchDayEntry = (
+  existingDayEntry: DayEntry | undefined,
+  patch: Partial<DayEntry>,
+): DayEntry => {
+  return {
+    hours: existingDayEntry?.hours ?? 0,
+    memo: existingDayEntry?.memo ?? "",
+    timeid: existingDayEntry?.timeid ?? "",
+    approved: existingDayEntry?.approved ?? false,
+    submitted: existingDayEntry?.submitted ?? false,
+    disabled: existingDayEntry?.disabled ?? false,
+    ...patch,
+  };
+};
 
 /**
  * localEdits: a map of "projId_taskId_dayKey" -> hours the user typed locally
  * (tracked in the UI layer and passed here so we know what not to overwrite)
  */
-export function mergeWeekData(
+export const mergeWeekData = (
   displayedWeekData: WeekData,
   freshWeekData: WeekData,
   localEdits: Map<string, number>,
-): WeekData {
+): WeekData => {
   const freshRowsByKey = new Map(
     freshWeekData.rows.map((row) => [row.rowKey, row]),
   );
@@ -37,27 +73,20 @@ export function mergeWeekData(
       const freshDayEntry = freshRow?.days[dayKey as DayKey];
       const localEditKey = `${localEditKeyPrefix}_${dayKey}`;
       const userHasLocalEditForCell = localEdits.has(localEditKey);
+      const freshDataIsAvailable = freshDayEntry !== undefined;
+      const displayedDataIsAvailable = displayedDayEntry !== undefined;
 
       if (freshDayEntry?.approved) {
-        // Approved on server → always take fresh value, any local edit is irrelevant
         mergedDays[dayKey as DayKey] = freshDayEntry;
-      } else if (userHasLocalEditForCell && displayedDayEntry) {
-        // User made a local edit to this cell → preserve their hours,
-        // but pull in updated server metadata (timeid, flags) if available
-        mergedDays[dayKey as DayKey] = {
-          ...displayedDayEntry,
-          hours: localEdits.get(localEditKey) ?? displayedDayEntry.hours,
-          timeid: freshDayEntry?.timeid ?? displayedDayEntry.timeid,
-          approved: freshDayEntry?.approved ?? displayedDayEntry.approved,
-          submitted: freshDayEntry?.submitted ?? displayedDayEntry.submitted,
-          disabled: freshDayEntry?.disabled ?? displayedDayEntry.disabled,
-        };
-      } else if (freshDayEntry !== undefined) {
-        // No local edit and fresh data is available → take fresh
+      } else if (userHasLocalEditForCell && displayedDataIsAvailable) {
+        mergedDays[dayKey as DayKey] = preserveLocalEditWithFreshMetadata(
+          displayedDayEntry,
+          freshDayEntry,
+          localEdits.get(localEditKey) ?? displayedDayEntry.hours,
+        );
+      } else if (freshDataIsAvailable) {
         mergedDays[dayKey as DayKey] = freshDayEntry;
-      } else if (freshRow === undefined && displayedDayEntry !== undefined) {
-        // Row is absent from fresh entirely → keep displayed as-is
-        // (user may have just added this row locally)
+      } else if (!freshDataIsAvailable && displayedDataIsAvailable) {
         mergedDays[dayKey as DayKey] = displayedDayEntry;
       }
       // else: row exists in fresh but this day has no entry →
@@ -77,23 +106,4 @@ export function mergeWeekData(
   );
 
   return { ...freshWeekData, rows: nonEmptyRows };
-}
-
-/**
- * Produce a fresh DayEntry with updated server metadata but preserved local hours.
- * Used when the server confirms a save (we get back a timeid).
- */
-export function patchDayEntry(
-  existingDayEntry: DayEntry | undefined,
-  patch: Partial<DayEntry>,
-): DayEntry {
-  return {
-    hours: existingDayEntry?.hours ?? 0,
-    memo: existingDayEntry?.memo ?? "",
-    timeid: existingDayEntry?.timeid ?? "",
-    approved: existingDayEntry?.approved ?? false,
-    submitted: existingDayEntry?.submitted ?? false,
-    disabled: existingDayEntry?.disabled ?? false,
-    ...patch,
-  };
-}
+};
