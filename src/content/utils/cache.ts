@@ -21,7 +21,9 @@ const buildStorageKey = (mondayISO: string) => STORAGE_KEY_PREFIX + mondayISO;
 const isExpired = (entry: WeekCacheEntry) =>
   Date.now() - entry.cachedAtTimestamp > MAX_CACHE_AGE_MS;
 
-export async function getCached(mondayISO: string): Promise<WeekData | null> {
+export const getCached = async (
+  mondayISO: string,
+): Promise<WeekData | null> => {
   const storageKey = buildStorageKey(mondayISO);
   const storageResult = await storageGet(storageKey);
   const cachedEntry = storageResult[storageKey] as WeekCacheEntry | undefined;
@@ -34,7 +36,7 @@ export async function getCached(mondayISO: string): Promise<WeekData | null> {
   }
 
   return cachedEntry.weekData;
-}
+};
 
 export async function setCached(
   mondayISO: string,
@@ -50,18 +52,13 @@ export async function setCached(
 
 export async function evictOldWeeks(): Promise<void> {
   const allStorageItems = await storageGet(null);
-  const expiredKeys: string[] = [];
 
-  for (const [storageKey, storedValue] of Object.entries(allStorageItems)) {
-    if (!storageKey.startsWith(STORAGE_KEY_PREFIX)) continue;
+  const expiredKeys = Object.entries(allStorageItems)
+    .filter(([storageKey]) => storageKey.startsWith(STORAGE_KEY_PREFIX))
+    .filter(([, storedValue]) => isExpired(storedValue as WeekCacheEntry))
+    .map(([storageKey]) => storageKey);
 
-    const cachedEntry = storedValue as WeekCacheEntry;
-    if (isExpired(cachedEntry)) {
-      expiredKeys.push(storageKey);
-    }
-  }
+  if (expiredKeys.length === 0) return;
 
-  if (expiredKeys.length > 0) {
-    await storageRemove(expiredKeys);
-  }
+  await storageRemove(expiredKeys);
 }
