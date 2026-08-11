@@ -4,13 +4,12 @@ import { loadWeek } from "@/services/week.service";
 import { saveRow, deleteRow } from "@/services/row.service";
 import { CacheService } from "@/services/cache.service";
 import { mergeWeekData } from "@/utils/merge";
+import { createKeyedAsyncDebounce } from "@/utils/debouncedAsync";
 import type { TimeRow, WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
-import { createKeyedDebounce } from "../utils/keyedDebounce";
 import type { Store } from "../context/useStore";
 
-// ── Row gate ──────────────────────────────────────────────────────────────────
 // Tracks in-flight save promises keyed by rowKey so deletes never race
 // against a save that hasn't completed yet.
 
@@ -35,9 +34,7 @@ async function waitForPendingSave(rowKey: string): Promise<void> {
   }
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
-
-interface Params {
+interface UseRowMutations {
   store: Store;
   weekISO: string;
   currentWeekDataRef: MutableRefObject<WeekData | null>;
@@ -59,12 +56,14 @@ export function useRowMutations({
   weekISO,
   currentWeekDataRef,
   localEditsRef,
-}: Params): RowMutations {
+}: UseRowMutations): RowMutations {
   const { userId, defaultItemId, setWeekData, setStatus, setTransientStatus } =
     store;
 
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
-  const saveDebounce = useRef(createKeyedDebounce()).current;
+  const { debounce, cancelByPrefix } = useRef(
+    createKeyedAsyncDebounce(),
+  ).current;
 
   const onSave = useCallback(
     async (row: TimeRow, dayKey: DayKey, hours: number, memo: string) => {
@@ -75,66 +74,56 @@ export function useRowMutations({
       if (hours > 0) localEditsRef.current.set(editKey, hours);
       else localEditsRef.current.delete(editKey);
 
-      // Debounce: cancel any pending save for this cell and restart the timer
-      return new Promise<void>((resolve, reject) => {
-        saveDebounce.debounce(cellKey, 400, async () => {
-          setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
+      setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
 
-          const savePromise = (async () => {
-            await saveRow(
-              {
-                projId: row.projId,
-                projRaw: row.projRaw,
-                taskId: row.taskId,
-                taskRaw: row.taskRaw,
-                itemId: row.itemId,
-                weekISO,
-                dayKey,
-                hours,
-                memo,
-                timeid: row.days[dayKey]?.timeid ?? "",
-              },
-              userId,
-              defaultItemId,
-            );
-            localEditsRef.current.delete(editKey);
-            const { weekData: fresh } = await loadWeek(
-              weekISO,
-              userId,
-              defaultItemId,
-            );
-            await CacheService.setCached(weekISO, fresh);
-            setWeekData(
-              mergeWeekData(
-                currentWeekDataRef.current ?? fresh,
-                fresh,
-                localEditsRef.current,
-              ),
-            );
-            setTransientStatus(
-              StatusId.Mutation,
-              "✓ Saved",
-              StatusKind.Success,
-            );
-          })();
-
-          // Register so any delete on this row waits for us to finish
-          registerSave(row.rowKey, savePromise);
-
-          try {
-            await savePromise;
-            resolve();
-          } catch (err) {
-            localEditsRef.current.delete(editKey);
-            setTransientStatus(
-              StatusId.Mutation,
-              `Save failed: ${(err as Error).message}`,
-              StatusKind.Error,
-            );
-            reject(err);
-          }
-        });
+      const savePromise = debounce(cellKey, 400, async () => {
+        await saveRow(
+          {
+            projId: row.projId,
+            projRaw: row.projRaw,
+            taskId: row.taskId,
+            taskRaw: row.taskRaw,
+            itemId: row.itemId,
+            weekISO,
+            dayKey,
+            hours,
+            memo,
+            timeid: row.days[dayKey]?.timeid ?? "",
+          },
+          userId,
+          defaultItemId,
+        );
+        localEditsRef.current.delete(editKey);
+        const { weekData: fresh } = await loadWeek(
+          weekISO,
+          userId,
+          defaultItemId,
+        );
+        await CacheService.setCached(weekISO, fresh);
+        setWeekData(
+          mergeWeekData(
+            currentWeekDataRef.current ?? fresh,
+            fresh,
+            localEditsRef.current,
+          ),
+        );
+        setTransientStatus(StatusId.Mutation, "✓ Saved", StatusKind.Success);
       });
+
+      // Register so any delete on this row waits for us to finish
+      registerSave(row.rowKey, savePromise);
+
+      try {
+        await savePromise;
+      } catch (err) {
+        localEditsRef.current.delete(editKey);
+        setTransientStatus(
+          StatusId.Mutation,
+          `Save failed: ${(err as Error).message}`,
+          StatusKind.Error,
+        );
+        throw err;
+      }
     },
     [
       weekISO,
@@ -143,9 +132,9 @@ export function useRowMutations({
       setWeekData,
       currentWeekDataRef,
       localEditsRef,
-      saveDebounce,
       userId,
       defaultItemId,
+      debounce,
     ],
   );
 
@@ -155,7 +144,7 @@ export function useRowMutations({
       setStatus(StatusId.Mutation, "Deleting…", StatusKind.Mutation);
 
       // Cancel any pending debounced saves for cells in this row
-      saveDebounce.cancelByPrefix(row.rowKey);
+      cancelByPrefix(row.rowKey);
 
       // Wait for any in-flight save to settle before deleting
       await waitForPendingSave(row.rowKey);
@@ -203,15 +192,15 @@ export function useRowMutations({
       }
     },
     [
-      weekISO,
       setStatus,
-      setTransientStatus,
+      cancelByPrefix,
       setWeekData,
       currentWeekDataRef,
-      localEditsRef,
-      saveDebounce,
+      weekISO,
+      setTransientStatus,
       userId,
       defaultItemId,
+      localEditsRef,
     ],
   );
 
