@@ -1,6 +1,6 @@
 import { useCallback, useRef, type MutableRefObject } from "react";
 import { getMondayISO, todayISO } from "@/utils/dates";
-import { loadWeek } from "@/utils/api";
+import { loadWeek } from "@/services/week.service";
 import { getCached, setCached } from "@/utils/cache";
 import { mergeWeekData } from "@/utils/merge";
 import type { WeekData } from "@/utils/types";

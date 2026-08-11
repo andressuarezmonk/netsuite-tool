@@ -1,6 +1,7 @@
 import { useCallback, useRef, type MutableRefObject } from "react";
 import { DAYS, type DayKey } from "@/utils/constants";
-import { loadWeek, saveRow, deleteRow } from "@/utils/api";
+import { loadWeek } from "@/services/week.service";
+import { saveRow, deleteRow } from "@/services/row.service";
 import { setCached } from "@/utils/cache";
 import { mergeWeekData } from "@/utils/merge";
 import { registerSave, waitForRowSave } from "@/utils/rowGate";

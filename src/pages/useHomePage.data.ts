@@ -1,10 +1,10 @@
 import { useCallback, useEffect } from "react";
-import { loadInit } from "@/utils/api";
 import { evictOldWeeks } from "@/utils/cache";
+import { FetchService } from "@/services/fetch.service";
 import type { TimeRow } from "@/utils/types";
 import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
-import { useWeekCache } from "../cache/useWeekCache";
+import { useWeekCache } from "../hooks/useWeekCache";
 import { useRowMutations, type RowMutations } from "../hooks/useRowMutations";
 import type { Store } from "../context/useStore";
 
@@ -48,26 +48,27 @@ export function useHomePageData(store: Store): HomePageActions {
     currentWeekDataRef.current = weekData;
   }, [weekData, currentWeekDataRef]);
 
-  useEffect(() => {
-    const initialFetch = async () => {
-      try {
-        evictOldWeeks();
-        const { userId: freshUserId, defaultItemId: freshDefaultItemId } =
-          await loadInit();
-        setUserId(freshUserId);
-        setDefaultItemId(freshDefaultItemId);
-        setInitialized(true);
-        clearStatus(StatusId.Init);
-        await loadWeekWithCache(weekISO, freshUserId, freshDefaultItemId);
-      } catch (err) {
-        setStatus(
-          StatusId.Init,
-          `Init failed: ${(err as Error).message}`,
-          StatusKind.Error,
-        );
-      }
-    };
+  const initialFetch = async () => {
+    try {
+      evictOldWeeks();
+      const data = await FetchService.fetchInitial();
+      const freshUserId = String(data.userid ?? "");
+      const freshDefaultItemId = String(data.serviceitemtobedefault ?? "754");
+      setUserId(freshUserId);
+      setDefaultItemId(freshDefaultItemId);
+      setInitialized(true);
+      clearStatus(StatusId.Init);
+      await loadWeekWithCache(weekISO, freshUserId, freshDefaultItemId);
+    } catch (err) {
+      setStatus(
+        StatusId.Init,
+        `Init failed: ${(err as Error).message}`,
+        StatusKind.Error,
+      );
+    }
+  };
 
+  useEffect(() => {
     initialFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
