@@ -3,7 +3,7 @@ import { DAYS } from "@/content/utils/constants";
 import { formatHours } from "@/content/utils/dates";
 import type { TimeRow as TimeRowType } from "@/content/utils/types";
 import DayCell from "../DayCell/DayCell";
-import { useAppActions } from "../../../context/AppContext";
+import { useStore } from "../../../context/AppContext";
 import gs from "../WeekGrid/WeekGrid.module.scss";
 import styles from "./TimeRow.module.scss";
 
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function TimeRow({ row, dayDates, today }: Props) {
-  const { onDelete } = useAppActions();
+  const { onDelete } = useStore();
   const rowTotal = DAYS.reduce(
     (sum, dk) => sum + (row.days[dk]?.hours ?? 0),
     0,

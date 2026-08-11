@@ -2,13 +2,13 @@ import { DAYS } from "@/content/utils/constants";
 import { addDays, todayISO, isoDayMonthDisplay } from "@/content/utils/dates";
 import TimeRow from "../TimeRow/TimeRow";
 import DayTotals from "../DayTotals/DayTotals";
-import { useAppState } from "../../../context/AppContext";
+import { useStore } from "../../../context/AppContext";
 import styles from "./WeekGrid.module.scss";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function WeekGrid() {
-  const { weekData, weekISO } = useAppState();
+  const { weekData, weekISO } = useStore();
   const today = todayISO();
   const dayDates = DAYS.map((_, i) => addDays(weekISO, i));
 

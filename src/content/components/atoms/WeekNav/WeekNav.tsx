@@ -5,7 +5,7 @@ import {
   todayISO,
   weekRangeLabel,
 } from "@/content/utils/dates";
-import { useAppState, useAppActions } from "../../../context/AppContext";
+import { useStore } from "../../../context/AppContext";
 import s from "./WeekNav.module.scss";
 
 function isoToWeekValue(mondayISO: string): string {
@@ -33,8 +33,7 @@ function weekValueToISO(weekVal: string): string {
 }
 
 export default function WeekNav() {
-  const { weekISO } = useAppState();
-  const { navigate } = useAppActions();
+  const { weekISO, navigate } = useStore();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

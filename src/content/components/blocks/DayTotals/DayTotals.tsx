@@ -1,8 +1,14 @@
 import { DAYS } from "@/content/utils/constants";
 import { formatHours } from "@/content/utils/dates";
-import type { TotalsProps } from "../../types";
 import gs from "../WeekGrid/WeekGrid.module.scss"; // shared grid column classes
 import s from "./DayTotals.module.scss";
+import type { TimeRow } from "@/content/utils/types";
+
+export interface TotalsProps {
+  rows: TimeRow[];
+  dayDates: string[];
+  today: string;
+}
 
 export default function DayTotals({ rows, dayDates, today }: TotalsProps) {
   // A day has entries if at least one row has a DayEntry object for it

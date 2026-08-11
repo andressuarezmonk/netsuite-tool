@@ -1,0 +1,14 @@
+@use "../../../styles/variables" as *;
+
+.footer {
+  padding: 10px $pad-x;
+  border-top: 1px solid $border;
+  font-size: 11px;
+  color: $text-light;
+  text-align: right;
+
+  a {
+    color: $primary;
+    text-decoration: none;
+  }
+}

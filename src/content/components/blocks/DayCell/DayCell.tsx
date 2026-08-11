@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { TimeRow } from "@/content/utils/types";
 import type { DayKey } from "@/content/utils/constants";
 import { formatHours } from "@/content/utils/dates";
-import { useAppActions } from "../../../context/AppContext";
+import { useStore } from "../../../context/AppContext";
 import s from "./DayCell.module.scss";
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default function DayCell({ row, dayKey, isToday }: Props) {
-  const { onSave } = useAppActions();
+  const { onSave } = useStore();
   const entry = row.days[dayKey];
   const [value, setValue] = useState(
     entry?.hours !== undefined ? formatHours(entry.hours) : "",

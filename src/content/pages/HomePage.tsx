@@ -2,38 +2,26 @@ import WeekGrid from "../components/blocks/WeekGrid/WeekGrid";
 import WeekNav from "../components/atoms/WeekNav/WeekNav";
 import AddRowBar from "../components/blocks/AddRowBar/AddRowBar";
 import StatusBar from "../components/atoms/StatusBar/StatusBar";
-import styles from "../components/App.module.scss";
-import { useAppState } from "../context/AppContext";
+import Header from "../components/blocks/Header/Header";
+import Footer from "../components/blocks/Footer/Footer";
+import styles from "./HomePage.module.scss";
+import { AppContext } from "../context/AppContext";
+import { useHomePageState } from "../hooks/useHomePageState";
 
 export default function HomePage() {
-  const { initialized } = useAppState();
+  const store = useHomePageState();
+  const { initialized } = store;
 
   return (
-    <div className={styles.root}>
-      <header className={styles.header}>
-        <div>
-          <h1>⏱ Weekly Time Entry</h1>
-          <p className={styles.subtitle}>NetSuite — fast entry</p>
-        </div>
-        <button
-          className={styles.linkBtn}
-          onClick={() => {
-            sessionStorage.setItem("ft_bypass", "1");
-            window.location.reload();
-          }}
-        >
-          Load original page →
-        </button>
-      </header>
-
-      <WeekNav />
-      <StatusBar />
-      <WeekGrid />
-      {initialized && <AddRowBar />}
-
-      <footer className={styles.footer}>
-        Fast Time Tracker · <a href={window.location.origin}>NetSuite Home</a>
-      </footer>
-    </div>
+    <AppContext.Provider value={store}>
+      <div className={styles.root}>
+        <Header />
+        <WeekNav />
+        <StatusBar />
+        <WeekGrid />
+        {initialized && <AddRowBar />}
+        <Footer />
+      </div>
+    </AppContext.Provider>
   );
 }

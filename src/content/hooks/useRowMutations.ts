@@ -4,7 +4,6 @@ import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
 import { setCached } from "@/content/utils/cache";
 import { mergeWeekData } from "@/content/utils/merge";
 import { registerSave, waitForRowSave } from "@/content/utils/rowGate";
-import { useNSData } from "@/content/context/NSDataContext";
 import type { TimeRow, WeekData } from "@/content/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
@@ -20,6 +19,8 @@ type StatusActions = {
 interface Params {
   setWeekData: SetWeekData;
   weekISO: string;
+  userId: string;
+  defaultItemId: string;
   statusActions: StatusActions;
   currentWeekDataRef: MutableRefObject<WeekData | null>;
   localEditsRef: MutableRefObject<Map<string, number>>;
@@ -38,12 +39,13 @@ export interface RowMutations {
 export function useRowMutations({
   setWeekData,
   weekISO,
+  userId,
+  defaultItemId,
   statusActions,
   currentWeekDataRef,
   localEditsRef,
 }: Params): RowMutations {
   const { setStatus, setTransientStatus } = statusActions;
-  const { userId, defaultItemId } = useNSData();
 
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
   const saveDebounce = useRef(createKeyedDebounce()).current;

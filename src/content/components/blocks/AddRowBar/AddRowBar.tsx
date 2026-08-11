@@ -1,12 +1,10 @@
 import { useState } from "react";
-import { useNSData } from "@/content/context/NSDataContext";
 import type { TimeRow, Project, Task } from "@/content/utils/types";
-import { useAppActions } from "../../../context/AppContext";
+import { useStore } from "../../../context/AppContext";
 import s from "./AddRowBar.module.scss";
 
 export default function AddRowBar() {
-  const { onAddRow } = useAppActions();
-  const { projects, tasks: allTasks } = useNSData();
+  const { onAddRow, projects, tasks: allTasks } = useStore();
   const [projId, setProjId] = useState("");
   const [taskId, setTaskId] = useState("");
 

@@ -1,4 +1,4 @@
-import { useAppState } from "../../../context/AppContext";
+import { useStore } from "../../../context/AppContext";
 import { StatusKind } from "../../../constants/statusKind";
 import s from "./StatusBar.module.scss";
 
@@ -32,7 +32,7 @@ const SPINNER_KINDS: StatusKind[] = [
 ];
 
 export default function StatusBar() {
-  const { statuses } = useAppState();
+  const { statuses } = useStore();
   const visible = Object.values(statuses).filter((st) => st.msg);
   if (visible.length === 0) return null;
 
