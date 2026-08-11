@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useRef,
-  type Dispatch,
-  type MutableRefObject,
-} from "react";
+import { useCallback, useRef, type MutableRefObject } from "react";
 import { DAYS, type DayKey } from "@/content/utils/constants";
 import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
 import { setCached } from "@/content/utils/cache";
@@ -11,11 +6,11 @@ import { mergeWeekData } from "@/content/utils/merge";
 import { registerSave, waitForRowSave } from "@/content/utils/rowGate";
 import { useNSData } from "@/content/context/NSDataContext";
 import type { TimeRow, WeekData } from "@/content/utils/types";
-import type { Action } from "../utils/appReducer";
-import { APP_ACTION_TYPE } from "../constants/appActionType";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import { createKeyedDebounce } from "../utils/keyedDebounce";
+
+type SetWeekData = (data: WeekData) => void;
 
 type StatusActions = {
   setStatus: (id: string, msg: string, kind: StatusKind) => void;
@@ -23,7 +18,7 @@ type StatusActions = {
 };
 
 interface Params {
-  dispatch: Dispatch<Action>;
+  setWeekData: SetWeekData;
   weekISO: string;
   statusActions: StatusActions;
   currentWeekDataRef: MutableRefObject<WeekData | null>;
@@ -41,7 +36,7 @@ export interface RowMutations {
 }
 
 export function useRowMutations({
-  dispatch,
+  setWeekData,
   weekISO,
   statusActions,
   currentWeekDataRef,
@@ -91,14 +86,13 @@ export function useRowMutations({
               defaultItemId,
             );
             await setCached(weekISO, fresh);
-            dispatch({
-              type: APP_ACTION_TYPE.SetData,
-              data: mergeWeekData(
+            setWeekData(
+              mergeWeekData(
                 currentWeekDataRef.current ?? fresh,
                 fresh,
                 localEditsRef.current,
               ),
-            });
+            );
             setTransientStatus(
               StatusId.Mutation,
               "✓ Saved",
@@ -128,7 +122,7 @@ export function useRowMutations({
       weekISO,
       setStatus,
       setTransientStatus,
-      dispatch,
+      setWeekData,
       currentWeekDataRef,
       localEditsRef,
       saveDebounce,
@@ -149,7 +143,13 @@ export function useRowMutations({
       await waitForRowSave(row.rowKey);
 
       try {
-        dispatch({ type: APP_ACTION_TYPE.RemoveRow, rowKey: row.rowKey });
+        // Optimistically remove the row from UI while the delete is in flight
+        setWeekData({
+          ...(currentWeekDataRef.current ?? { rows: [], weekStart: weekISO }),
+          rows: (currentWeekDataRef.current?.rows ?? []).filter(
+            (r) => r.rowKey !== row.rowKey,
+          ),
+        });
         await deleteRow(timeids);
         setTransientStatus(
           StatusId.Mutation,
@@ -162,6 +162,7 @@ export function useRowMutations({
           defaultItemId,
         );
         await setCached(weekISO, fresh);
+        setWeekData(fresh);
       } catch (err) {
         setTransientStatus(
           StatusId.Mutation,
@@ -174,21 +175,20 @@ export function useRowMutations({
           defaultItemId,
         );
         await setCached(weekISO, fresh);
-        dispatch({
-          type: APP_ACTION_TYPE.SetData,
-          data: mergeWeekData(
+        setWeekData(
+          mergeWeekData(
             currentWeekDataRef.current ?? fresh,
             fresh,
             localEditsRef.current,
           ),
-        });
+        );
       }
     },
     [
       weekISO,
       setStatus,
       setTransientStatus,
-      dispatch,
+      setWeekData,
       currentWeekDataRef,
       localEditsRef,
       saveDebounce,

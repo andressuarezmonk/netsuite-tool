@@ -1,24 +1,30 @@
-import type { Dispatch } from "react";
-import type { Action } from "./appReducer";
-import { APP_ACTION_TYPE } from "../constants/appActionType";
 import type { StatusKind } from "../constants/statusKind";
+import type { StatusEntry } from "../components/atoms/StatusBar/StatusBar";
+
+type SetStatuses = (
+  updater: (prev: Record<string, StatusEntry>) => Record<string, StatusEntry>,
+) => void;
 
 /**
- * Factory that returns status helpers bound to a given dispatch.
+ * Factory that returns status helpers bound to a given statuses setter.
  *
  * - setStatus:          shows a persistent status (stays until clearStatus is called)
  * - clearStatus:        removes a status by id
  * - setTransientStatus: shows a status that auto-dismisses after `ms` ms (default 2500)
  */
-export function createStatusActions(dispatch: Dispatch<Action>) {
+export function createStatusActions(setStatuses: SetStatuses) {
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const setStatus = (id: string, msg: string, kind: StatusKind) => {
-    dispatch({ type: APP_ACTION_TYPE.SetStatus, entry: { id, msg, kind } });
+    setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
   };
 
   const clearStatus = (id: string) => {
-    dispatch({ type: APP_ACTION_TYPE.ClearStatus, id });
+    setStatuses((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
   };
 
   const setTransientStatus = (
@@ -27,10 +33,14 @@ export function createStatusActions(dispatch: Dispatch<Action>) {
     kind: StatusKind,
     ms = 2500,
   ) => {
-    dispatch({ type: APP_ACTION_TYPE.SetStatus, entry: { id, msg, kind } });
+    setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => {
-      dispatch({ type: APP_ACTION_TYPE.ClearStatus, id });
+      setStatuses((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }, ms);
   };
 

@@ -1,13 +1,16 @@
-import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadInit } from "@/content/utils/api";
 import { evictOldWeeks } from "@/content/utils/cache";
-import type { TimeRow } from "@/content/utils/types";
+import { getMondayISO, todayISO } from "@/content/utils/dates";
+import type { TimeRow, WeekData } from "@/content/utils/types";
 import WeekGrid from "./components/blocks/WeekGrid/WeekGrid";
 import WeekNav from "./components/atoms/WeekNav/WeekNav";
 import AddRowBar from "./components/blocks/AddRowBar/AddRowBar";
-import StatusBar, { StatusKind } from "./components/atoms/StatusBar/StatusBar";
+import StatusBar, {
+  StatusKind,
+  type StatusEntry,
+} from "./components/atoms/StatusBar/StatusBar";
 import styles from "./components/App.module.scss";
-import { reducer, initialState, APP_ACTION_TYPE } from "./utils/appReducer";
 import { AppStateContext, AppActionsContext } from "./context/AppContext";
 import { NSDataProvider, useNSDataActions } from "./context/NSDataContext";
 import { createStatusActions } from "./utils/statusActions";
@@ -16,11 +19,22 @@ import { useWeekCache } from "./cache/useWeekCache";
 import { useRowMutations } from "./hooks/useRowMutations";
 
 function AppInner() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [weekISO, setWeekISO] = useState(getMondayISO(todayISO()));
+  const [weekData, setWeekData] = useState<WeekData | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+  const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({
+    [StatusId.Init]: {
+      id: StatusId.Init,
+      msg: "Initializing…",
+      kind: StatusKind.Fetch,
+    },
+  });
+
   const { setUserId, setDefaultItemId } = useNSDataActions();
 
   const { setStatus, clearStatus, setTransientStatus } = useMemo(
-    () => createStatusActions(dispatch),
+    () => createStatusActions(setStatuses),
     [],
   );
 
@@ -29,11 +43,11 @@ function AppInner() {
     currentWeekDataRef,
     localEditsRef,
     activeWeekRef,
-  } = useWeekCache(dispatch, { setStatus, clearStatus });
+  } = useWeekCache(setWeekData, setRefreshing, { setStatus, clearStatus });
 
   const { onSave, onDelete } = useRowMutations({
-    dispatch,
-    weekISO: state.weekISO,
+    setWeekData,
+    weekISO,
     statusActions: { setStatus, setTransientStatus },
     currentWeekDataRef,
     localEditsRef,
@@ -41,8 +55,8 @@ function AppInner() {
 
   // Keep currentWeekDataRef in sync so background merges use the latest data
   useEffect(() => {
-    currentWeekDataRef.current = state.weekData;
-  }, [state.weekData, currentWeekDataRef]);
+    currentWeekDataRef.current = weekData;
+  }, [weekData, currentWeekDataRef]);
 
   useEffect(() => {
     const initialFetch = async () => {
@@ -51,9 +65,9 @@ function AppInner() {
         const { userId, defaultItemId } = await loadInit();
         setUserId(userId);
         setDefaultItemId(defaultItemId);
-        dispatch({ type: APP_ACTION_TYPE.Initialized });
+        setInitialized(true);
         clearStatus(StatusId.Init);
-        await loadWeekWithCache(state.weekISO, userId, defaultItemId);
+        await loadWeekWithCache(weekISO, userId, defaultItemId);
       } catch (err) {
         setStatus(
           StatusId.Init,
@@ -69,37 +83,27 @@ function AppInner() {
   const navigate = useCallback(
     (mondayISO: string) => {
       activeWeekRef.current = mondayISO;
-      dispatch({ type: APP_ACTION_TYPE.SetWeek, weekISO: mondayISO });
+      setWeekISO(mondayISO);
+      setWeekData(null);
+      setRefreshing(false);
       loadWeekWithCache(mondayISO);
     },
     [loadWeekWithCache, activeWeekRef],
   );
 
   const onAddRow = useCallback((row: TimeRow) => {
-    dispatch({ type: APP_ACTION_TYPE.AddRow, row });
+    setWeekData((prev) =>
+      prev ? { ...prev, rows: [...prev.rows, row] } : prev,
+    );
   }, []);
 
   const stateValue = useMemo(
-    () => ({
-      weekISO: state.weekISO,
-      weekData: state.weekData,
-      refreshing: state.refreshing,
-      statuses: state.statuses,
-      initialized: state.initialized,
-    }),
-    [state],
+    () => ({ weekISO, weekData, refreshing, statuses, initialized }),
+    [weekISO, weekData, refreshing, statuses, initialized],
   );
 
   const actionsValue = useMemo(
-    () => ({
-      dispatch,
-      navigate,
-      onSave,
-      onDelete,
-      onAddRow,
-      setStatus,
-      clearStatus,
-    }),
+    () => ({ navigate, onSave, onDelete, onAddRow, setStatus, clearStatus }),
     [navigate, onSave, onDelete, onAddRow, setStatus, clearStatus],
   );
 
@@ -126,7 +130,7 @@ function AppInner() {
           <WeekNav />
           <StatusBar />
           <WeekGrid />
-          {state.initialized && <AddRowBar />}
+          {initialized && <AddRowBar />}
 
           <footer className={styles.footer}>
             Fast Time Tracker ·{" "}

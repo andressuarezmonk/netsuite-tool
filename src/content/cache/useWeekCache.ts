@@ -1,19 +1,15 @@
-import {
-  useCallback,
-  useRef,
-  type Dispatch,
-  type MutableRefObject,
-} from "react";
+import { useCallback, useRef, type MutableRefObject } from "react";
 import { getMondayISO, todayISO } from "@/content/utils/dates";
 import { loadWeek } from "@/content/utils/api";
 import { getCached, setCached } from "@/content/utils/cache";
 import { mergeWeekData } from "@/content/utils/merge";
 import { useNSData, useNSDataActions } from "@/content/context/NSDataContext";
 import type { WeekData } from "@/content/utils/types";
-import type { Action } from "../utils/appReducer";
-import { APP_ACTION_TYPE } from "../constants/appActionType";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
+
+type SetWeekData = (data: WeekData | null) => void;
+type SetRefreshing = (value: boolean) => void;
 
 type StatusActions = {
   setStatus: (id: string, msg: string, kind: StatusKind) => void;
@@ -37,7 +33,8 @@ export interface WeekCacheHandle {
 }
 
 export function useWeekCache(
-  dispatch: Dispatch<Action>,
+  setWeekData: SetWeekData,
+  setRefreshing: SetRefreshing,
   statusActions: StatusActions,
 ): WeekCacheHandle {
   const { setStatus, clearStatus } = statusActions;
@@ -66,11 +63,8 @@ export function useWeekCache(
       if (activeWeekRef.current !== mondayISO) return;
 
       if (cached) {
-        dispatch({
-          type: APP_ACTION_TYPE.SetData,
-          data: cached,
-          refreshing: true,
-        });
+        setWeekData(cached);
+        setRefreshing(true);
         setStatus(
           StatusId.Cache,
           "Loaded from cache — refreshing…",
@@ -97,29 +91,27 @@ export function useWeekCache(
         const merged = displayed
           ? mergeWeekData(displayed, fresh, localEditsRef.current)
           : fresh;
-        dispatch({
-          type: APP_ACTION_TYPE.SetData,
-          data: merged,
-          refreshing: false,
-        });
+        setWeekData(merged);
+        setRefreshing(false);
         clearStatus(StatusId.Cache);
         clearStatus(StatusId.Fetch);
       } catch (err) {
         if (activeWeekRef.current !== mondayISO) return;
         if (!cached) {
           setStatus(
-            "fetch",
+            StatusId.Fetch,
             `Failed to load: ${(err as Error).message}`,
             StatusKind.Error,
           );
         } else {
           setStatus(StatusId.Cache, "⚠ Refresh failed", StatusKind.Error);
-          dispatch({ type: APP_ACTION_TYPE.SetRefreshing, value: false });
+          setRefreshing(false);
         }
       }
     },
     [
-      dispatch,
+      setWeekData,
+      setRefreshing,
       setStatus,
       clearStatus,
       userId,

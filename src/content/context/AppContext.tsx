@@ -1,10 +1,9 @@
-import { createContext, useContext, type Dispatch } from "react";
+import { createContext, useContext } from "react";
 import type { TimeRow, WeekData } from "@/content/utils/types";
 import type {
   StatusEntry,
   StatusKind,
 } from "../components/atoms/StatusBar/StatusBar";
-import type { Action } from "../utils/appReducer";
 import type { DayKey } from "@/content/utils/constants";
 
 export interface AppState {
@@ -18,7 +17,6 @@ export interface AppState {
 export const AppStateContext = createContext<AppState | null>(null);
 
 export interface AppActions {
-  dispatch: Dispatch<Action>;
   navigate: (mondayISO: string) => void;
   onSave: (
     row: TimeRow,
