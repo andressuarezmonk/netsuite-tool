@@ -1,4 +1,10 @@
-import { useCallback, useRef, type MutableRefObject } from "react";
+import {
+  useCallback,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+  type MutableRefObject,
+} from "react";
 import { DAYS, type DayKey } from "@/content/utils/constants";
 import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
 import { setCached } from "@/content/utils/cache";
@@ -9,15 +15,13 @@ import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import { createKeyedDebounce } from "../utils/keyedDebounce";
 
-type SetWeekData = (data: WeekData) => void;
-
 type StatusActions = {
   setStatus: (id: string, msg: string, kind: StatusKind) => void;
   setTransientStatus: (id: string, msg: string, kind: StatusKind) => void;
 };
 
 interface Params {
-  setWeekData: SetWeekData;
+  setWeekData: Dispatch<SetStateAction<WeekData | null>>;
   weekISO: string;
   userId: string;
   defaultItemId: string;

@@ -1,4 +1,10 @@
-import { useCallback, useRef, type MutableRefObject } from "react";
+import {
+  useCallback,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+  type MutableRefObject,
+} from "react";
 import { getMondayISO, todayISO } from "@/content/utils/dates";
 import { loadWeek } from "@/content/utils/api";
 import { getCached, setCached } from "@/content/utils/cache";
@@ -6,11 +12,6 @@ import { mergeWeekData } from "@/content/utils/merge";
 import type { WeekData, Project, Task } from "@/content/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
-
-type SetWeekData = (data: WeekData | null) => void;
-type SetRefreshing = (value: boolean) => void;
-type SetProjects = (projects: Project[]) => void;
-type SetTasks = (tasks: Record<string, Task[]>) => void;
 
 type StatusActions = {
   setStatus: (id: string, msg: string, kind: StatusKind) => void;
@@ -29,10 +30,10 @@ export interface WeekCacheHandle {
 }
 
 export function useWeekCache(
-  setWeekData: SetWeekData,
-  setRefreshing: SetRefreshing,
-  setProjects: SetProjects,
-  setTasks: SetTasks,
+  setWeekData: Dispatch<SetStateAction<WeekData | null>>,
+  setRefreshing: Dispatch<SetStateAction<boolean>>,
+  setProjects: Dispatch<SetStateAction<Project[]>>,
+  setTasks: Dispatch<SetStateAction<Record<string, Task[]>>>,
   statusActions: StatusActions,
 ): WeekCacheHandle {
   const { setStatus, clearStatus } = statusActions;

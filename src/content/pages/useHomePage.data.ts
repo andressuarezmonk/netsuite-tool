@@ -1,40 +1,38 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { loadInit } from "@/content/utils/api";
 import { evictOldWeeks } from "@/content/utils/cache";
-import { getMondayISO, todayISO } from "@/content/utils/dates";
-import type { TimeRow, WeekData, Project, Task } from "@/content/utils/types";
-import {
-  StatusKind,
-  type StatusEntry,
-} from "../components/atoms/StatusBar/StatusBar";
-import { createStatusActions } from "../utils/statusActions";
+import type { TimeRow } from "@/content/utils/types";
+import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 import { useWeekCache } from "../cache/useWeekCache";
-import { useRowMutations } from "./useRowMutations";
-import type { AppStore } from "../context/AppContext";
+import { useRowMutations } from "../hooks/useRowMutations";
+import type { Store } from "../context/useStore";
 
-export function useHomePageState(): AppStore {
-  const [userId, setUserId] = useState("");
-  const [defaultItemId, setDefaultItemId] = useState("754");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<Record<string, Task[]>>({});
+interface HomePageActions {
+  navigate: (mondayISO: string) => void;
+  onSave: ReturnType<typeof useRowMutations>["onSave"];
+  onDelete: ReturnType<typeof useRowMutations>["onDelete"];
+  onAddRow: (row: TimeRow) => void;
+}
 
-  const [weekISO, setWeekISO] = useState(getMondayISO(todayISO()));
-  const [weekData, setWeekData] = useState<WeekData | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({
-    [StatusId.Init]: {
-      id: StatusId.Init,
-      msg: "Initializing…",
-      kind: StatusKind.Fetch,
-    },
-  });
-
-  const { setStatus, clearStatus, setTransientStatus } = useMemo(
-    () => createStatusActions(setStatuses),
-    [],
-  );
+export function useHomePageData(store: Store): HomePageActions {
+  const {
+    userId,
+    setUserId,
+    defaultItemId,
+    setDefaultItemId,
+    weekISO,
+    setWeekISO,
+    weekData,
+    setWeekData,
+    setRefreshing,
+    setProjects,
+    setTasks,
+    setInitialized,
+    setStatus,
+    clearStatus,
+    setTransientStatus,
+  } = store;
 
   const {
     loadWeekWithCache,
@@ -92,6 +90,8 @@ export function useHomePageState(): AppStore {
       setRefreshing(false);
       loadWeekWithCache(mondayISO);
     },
+    // setWeekISO, setWeekData, setRefreshing are stable useState setters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [loadWeekWithCache, activeWeekRef],
   );
 
@@ -99,42 +99,9 @@ export function useHomePageState(): AppStore {
     setWeekData((prev) =>
       prev ? { ...prev, rows: [...prev.rows, row] } : prev,
     );
+    // setWeekData is a stable useState setter
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return useMemo(
-    () => ({
-      userId,
-      defaultItemId,
-      projects,
-      tasks,
-      weekISO,
-      weekData,
-      refreshing,
-      statuses,
-      initialized,
-      navigate,
-      onSave,
-      onDelete,
-      onAddRow,
-      setStatus,
-      clearStatus,
-    }),
-    [
-      userId,
-      defaultItemId,
-      projects,
-      tasks,
-      weekISO,
-      weekData,
-      refreshing,
-      statuses,
-      initialized,
-      navigate,
-      onSave,
-      onDelete,
-      onAddRow,
-      setStatus,
-      clearStatus,
-    ],
-  );
+  return { navigate, onSave, onDelete, onAddRow };
 }

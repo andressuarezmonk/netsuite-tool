@@ -6,14 +6,17 @@ import Header from "../components/blocks/Header/Header";
 import Footer from "../components/blocks/Footer/Footer";
 import styles from "./HomePage.module.scss";
 import { AppContext } from "../context/AppContext";
-import { useHomePageState } from "../hooks/useHomePageState";
+import { useStore } from "../context/useStore";
+import { useHomePageData } from "./useHomePage.data";
 
 export default function HomePage() {
-  const store = useHomePageState();
-  const { initialized } = store;
+  const store = useStore();
+  const actions = useHomePageData(store);
+
+  const { initialized, ...storeState } = store;
 
   return (
-    <AppContext.Provider value={store}>
+    <AppContext.Provider value={{ ...storeState, initialized, ...actions }}>
       <div className={styles.root}>
         <Header />
         <WeekNav />
