@@ -6,7 +6,7 @@
  */
 
 import type { WeekData, Project, Task } from "../utils/types";
-import { storageGet, storageSet, storageRemove } from "./chromeStorage.service";
+import { ChromeStorage } from "./chromeStorage.service";
 import { loadWeek } from "./week.service";
 import { mergeWeekData } from "../utils/merge";
 
@@ -25,13 +25,13 @@ const isExpired = (entry: WeekCacheEntry) =>
 
 const getCached = async (mondayISO: string): Promise<WeekData | null> => {
   const storageKey = buildStorageKey(mondayISO);
-  const storageResult = await storageGet(storageKey);
+  const storageResult = await ChromeStorage.storageGet(storageKey);
   const cachedEntry = storageResult[storageKey] as WeekCacheEntry | undefined;
 
   if (!cachedEntry) return null;
 
   if (isExpired(cachedEntry)) {
-    await storageRemove(storageKey);
+    await ChromeStorage.storageRemove(storageKey);
     return null;
   }
 
@@ -44,11 +44,11 @@ async function setCached(mondayISO: string, weekData: WeekData): Promise<void> {
     weekData,
     cachedAtTimestamp: Date.now(),
   };
-  await storageSet({ [storageKey]: entryToStore });
+  await ChromeStorage.storageSet({ [storageKey]: entryToStore });
 }
 
 async function evictOldWeeks(): Promise<void> {
-  const allStorageItems = await storageGet(null);
+  const allStorageItems = await ChromeStorage.storageGet(null);
 
   const expiredKeys = Object.entries(allStorageItems)
     .filter(([storageKey]) => storageKey.startsWith(STORAGE_KEY_PREFIX))
@@ -57,7 +57,7 @@ async function evictOldWeeks(): Promise<void> {
 
   if (expiredKeys.length === 0) return;
 
-  await storageRemove(expiredKeys);
+  await ChromeStorage.storageRemove(expiredKeys);
 }
 
 // ── Cache-first fetch strategy ────────────────────────────────────────────────

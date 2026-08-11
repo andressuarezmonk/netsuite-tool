@@ -3,7 +3,7 @@
  * All chrome.storage APIs are callback-only; these helpers let callers use async/await instead.
  */
 
-export function storageGet(
+function storageGet(
   keys: string | string[] | null,
 ): Promise<Record<string, unknown>> {
   return new Promise((resolve) =>
@@ -14,10 +14,12 @@ export function storageGet(
   );
 }
 
-export function storageSet(items: Record<string, unknown>): Promise<void> {
+function storageSet(items: Record<string, unknown>): Promise<void> {
   return new Promise((resolve) => chrome.storage.local.set(items, resolve));
 }
 
-export function storageRemove(keys: string | string[]): Promise<void> {
+function storageRemove(keys: string | string[]): Promise<void> {
   return new Promise((resolve) => chrome.storage.local.remove(keys, resolve));
 }
+
+export const ChromeStorage = { storageGet, storageSet, storageRemove };
