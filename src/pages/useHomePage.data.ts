@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from "react";
-import { loadInit } from "@/content/utils/api";
-import { evictOldWeeks } from "@/content/utils/cache";
-import type { TimeRow } from "@/content/utils/types";
+import { loadInit } from "@/utils/api";
+import { evictOldWeeks } from "@/utils/cache";
+import type { TimeRow } from "@/utils/types";
 import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 import { useWeekCache } from "../cache/useWeekCache";

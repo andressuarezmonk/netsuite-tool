@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getHandler } from "@/content/utils/constants";
+import { getHandler } from "@/utils/constants";
 
 export const BASE_URL = `${window.location.origin}/app/site/hosting/scriptlet.nl`;
 

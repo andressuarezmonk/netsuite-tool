@@ -17,7 +17,7 @@ export default defineConfig({
         host_permissions: ['https://*.netsuite.com/*'],
         content_scripts: [{
           matches: ['https://*.netsuite.com/app/site/hosting/scriptlet.nl*'],
-          js: ['src/content/index.tsx'],
+          js: ['src/index.tsx'],
           run_at: 'document_end',
         }],
         action: {

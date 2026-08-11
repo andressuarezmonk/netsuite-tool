@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { TimeRow, Project, Task } from "@/content/utils/types";
+import type { TimeRow, Project, Task } from "@/utils/types";
 import { useStore } from "../../../context/AppContext";
 import s from "./AddRowBar.module.scss";
 

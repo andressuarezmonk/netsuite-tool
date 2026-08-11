@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  addDays,
-  getMondayISO,
-  todayISO,
-  weekRangeLabel,
-} from "@/content/utils/dates";
+import { addDays, getMondayISO, todayISO, weekRangeLabel } from "@/utils/dates";
 import { useStore } from "../../../context/AppContext";
 import s from "./WeekNav.module.scss";
 

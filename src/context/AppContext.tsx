@@ -1,10 +1,10 @@
 import { createContext, useContext } from "react";
-import type { TimeRow, WeekData, Project, Task } from "@/content/utils/types";
+import type { TimeRow, WeekData, Project, Task } from "@/utils/types";
 import type {
   StatusKind,
   StatusEntry,
 } from "../components/atoms/StatusBar/StatusBar";
-import type { DayKey } from "@/content/utils/constants";
+import type { DayKey } from "@/utils/constants";
 
 export interface AppStore {
   // NS data

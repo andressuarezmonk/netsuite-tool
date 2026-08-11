@@ -1,10 +1,10 @@
 import { useCallback, useRef, type MutableRefObject } from "react";
-import { DAYS, type DayKey } from "@/content/utils/constants";
-import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
-import { setCached } from "@/content/utils/cache";
-import { mergeWeekData } from "@/content/utils/merge";
-import { registerSave, waitForRowSave } from "@/content/utils/rowGate";
-import type { TimeRow, WeekData } from "@/content/utils/types";
+import { DAYS, type DayKey } from "@/utils/constants";
+import { loadWeek, saveRow, deleteRow } from "@/utils/api";
+import { setCached } from "@/utils/cache";
+import { mergeWeekData } from "@/utils/merge";
+import { registerSave, waitForRowSave } from "@/utils/rowGate";
+import type { TimeRow, WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import { createKeyedDebounce } from "../utils/keyedDebounce";

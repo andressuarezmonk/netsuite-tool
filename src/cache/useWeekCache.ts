@@ -1,9 +1,9 @@
 import { useCallback, useRef, type MutableRefObject } from "react";
-import { getMondayISO, todayISO } from "@/content/utils/dates";
-import { loadWeek } from "@/content/utils/api";
-import { getCached, setCached } from "@/content/utils/cache";
-import { mergeWeekData } from "@/content/utils/merge";
-import type { WeekData } from "@/content/utils/types";
+import { getMondayISO, todayISO } from "@/utils/dates";
+import { loadWeek } from "@/utils/api";
+import { getCached, setCached } from "@/utils/cache";
+import { mergeWeekData } from "@/utils/merge";
+import type { WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import type { Store } from "../context/useStore";

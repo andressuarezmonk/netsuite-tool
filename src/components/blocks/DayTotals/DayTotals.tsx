@@ -1,8 +1,8 @@
-import { DAYS } from "@/content/utils/constants";
-import { formatHours } from "@/content/utils/dates";
+import { DAYS } from "@/utils/constants";
+import { formatHours } from "@/utils/dates";
 import gs from "../WeekGrid/WeekGrid.module.scss"; // shared grid column classes
 import s from "./DayTotals.module.scss";
-import type { TimeRow } from "@/content/utils/types";
+import type { TimeRow } from "@/utils/types";
 
 export interface TotalsProps {
   rows: TimeRow[];

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { getMondayISO, todayISO } from "@/content/utils/dates";
-import type { WeekData, Project, Task } from "@/content/utils/types";
+import { getMondayISO, todayISO } from "@/utils/dates";
+import type { WeekData, Project, Task } from "@/utils/types";
 import {
   StatusKind,
   type StatusEntry,

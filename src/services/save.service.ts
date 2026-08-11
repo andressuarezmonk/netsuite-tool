@@ -1,5 +1,5 @@
 import { ApiClient, BASE_URL, getHandlerParams } from "./apiClient.service";
-import type { DayKey } from "@/content/utils/constants";
+import type { DayKey } from "@/utils/constants";
 
 export const SaveEndpoints = {
   Row: `${BASE_URL}?opType=saveAll`,

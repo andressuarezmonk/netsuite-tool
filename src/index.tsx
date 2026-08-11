@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import { TARGET_SCRIPT, setHandlerScriptId } from "@/content/utils/constants";
+import { TARGET_SCRIPT, setHandlerScriptId } from "@/utils/constants";
 import App from "./App";
 
 const params = new URLSearchParams(window.location.search);
