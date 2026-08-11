@@ -43,6 +43,7 @@
     "vite-plugin-web-extension": "^4.5.1"
   },
   "dependencies": {
+    "axios": "^1.7.9",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   }

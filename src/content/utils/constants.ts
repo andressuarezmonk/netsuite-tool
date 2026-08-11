@@ -10,8 +10,6 @@
 
 export const getAccountId = () => window.location.hostname.split(".")[0];
 
-export const getNSBaseUrl = () => window.location.origin;
-
 // The handler URL is built from values stored by the content script on first load.
 // Falls back to the convention of TARGET_SCRIPT - 2 if storage hasn't been set yet.
 export function getHandler(): string {

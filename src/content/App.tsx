@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useReducer } from "react";
-import { getNSBaseUrl } from "@/content/utils/constants";
 import { loadInit } from "@/content/utils/api";
 import { evictOldWeeks } from "@/content/utils/cache";
 import type { TimeRow } from "@/content/utils/types";
@@ -126,7 +125,8 @@ export default function App() {
           {state.initialized && <AddRowBar />}
 
           <footer className={styles.footer}>
-            Fast Time Tracker · <a href={getNSBaseUrl()}>NetSuite Home</a>
+            Fast Time Tracker ·{" "}
+            <a href={window.location.origin}>NetSuite Home</a>
           </footer>
         </div>
       </AppActionsContext.Provider>

@@ -9,6 +9,7 @@ import {
   dayKeyFromIndex,
 } from "./dates";
 import { apiFetch } from "./fetchUtils";
+import { NSApprovalStatus, NSRejectedStatus } from "../../constants/nsEnums";
 import type { Project, Task, TimeRow, WeekData, SaveRowParams } from "./types";
 
 // ── Module-level state ──────────────────────────────────────────────────────
@@ -143,9 +144,11 @@ export async function loadWeek(mondayISO: string): Promise<WeekData> {
             hours: nsToHours(entry.hours as string),
             memo: (entry.memo as string) ?? "",
             timeid: (entry.internalid as string) ?? "",
-            approved: entry.approval === "T",
+            approved: entry.approval === NSApprovalStatus.Approved,
             // "rejected=3" means submitted/pending; only flag as submitted if not already approved
-            submitted: entry.approval !== "T" && entry.rejected === "3",
+            submitted:
+              entry.approval !== NSApprovalStatus.Approved &&
+              entry.rejected === NSRejectedStatus.Submitted,
             disabled: entry.disableLine === true,
           };
         }
