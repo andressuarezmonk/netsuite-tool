@@ -25,17 +25,24 @@ export function useWeekCache(store: Store): WeekCacheHandle {
     setTasks,
     setStatus,
     clearStatus,
+    userId,
+    defaultItemId,
   } = store;
 
   const currentWeekDataRef = useRef<WeekData | null>(null);
   const localEditsRef = useRef<Map<string, number>>(new Map());
   const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
 
-  // userId and defaultItemId are passed in directly on first load to avoid
-  // the React state timing issue — state updates are async so context values
-  // won't be available yet immediately after setUserId/setDefaultItemId.
+  // freshUserId/freshDefaultItemId are passed in on first load to bypass the
+  // React state timing issue — on subsequent navigations the store values are used.
   const loadWeekWithCache = useCallback(
-    async (mondayISO: string, userId = "", defaultItemId = "754") => {
+    async (
+      mondayISO: string,
+      freshUserId?: string,
+      freshDefaultItemId?: string,
+    ) => {
+      const resolvedUserId = freshUserId ?? userId;
+      const resolvedDefaultItemId = freshDefaultItemId ?? defaultItemId;
       activeWeekRef.current = mondayISO;
       localEditsRef.current = new Map();
 
@@ -58,8 +65,8 @@ export function useWeekCache(store: Store): WeekCacheHandle {
         const { fresh, merged, projects, tasks } =
           await CacheService.fetchAndCacheWeek(
             mondayISO,
-            userId,
-            defaultItemId,
+            resolvedUserId,
+            resolvedDefaultItemId,
             currentWeekDataRef.current,
             localEditsRef.current,
           );
@@ -91,7 +98,16 @@ export function useWeekCache(store: Store): WeekCacheHandle {
         }
       }
     },
-    [setWeekData, setRefreshing, setProjects, setTasks, setStatus, clearStatus],
+    [
+      setWeekData,
+      setRefreshing,
+      setProjects,
+      setTasks,
+      setStatus,
+      clearStatus,
+      userId,
+      defaultItemId,
+    ],
   );
 
   return {
