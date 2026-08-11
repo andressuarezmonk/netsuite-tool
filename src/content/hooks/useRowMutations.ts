@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useRef,
-  type Dispatch,
-  type SetStateAction,
-  type MutableRefObject,
-} from "react";
+import { useCallback, useRef, type MutableRefObject } from "react";
 import { DAYS, type DayKey } from "@/content/utils/constants";
 import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
 import { setCached } from "@/content/utils/cache";
@@ -14,18 +8,11 @@ import type { TimeRow, WeekData } from "@/content/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import { createKeyedDebounce } from "../utils/keyedDebounce";
-
-type StatusActions = {
-  setStatus: (id: string, msg: string, kind: StatusKind) => void;
-  setTransientStatus: (id: string, msg: string, kind: StatusKind) => void;
-};
+import type { Store } from "../context/useStore";
 
 interface Params {
-  setWeekData: Dispatch<SetStateAction<WeekData | null>>;
+  store: Store;
   weekISO: string;
-  userId: string;
-  defaultItemId: string;
-  statusActions: StatusActions;
   currentWeekDataRef: MutableRefObject<WeekData | null>;
   localEditsRef: MutableRefObject<Map<string, number>>;
 }
@@ -41,15 +28,13 @@ export interface RowMutations {
 }
 
 export function useRowMutations({
-  setWeekData,
+  store,
   weekISO,
-  userId,
-  defaultItemId,
-  statusActions,
   currentWeekDataRef,
   localEditsRef,
 }: Params): RowMutations {
-  const { setStatus, setTransientStatus } = statusActions;
+  const { userId, defaultItemId, setWeekData, setStatus, setTransientStatus } =
+    store;
 
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
   const saveDebounce = useRef(createKeyedDebounce()).current;

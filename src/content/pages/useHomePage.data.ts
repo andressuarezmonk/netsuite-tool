@@ -5,33 +5,28 @@ import type { TimeRow } from "@/content/utils/types";
 import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 import { useWeekCache } from "../cache/useWeekCache";
-import { useRowMutations } from "../hooks/useRowMutations";
+import { useRowMutations, type RowMutations } from "../hooks/useRowMutations";
 import type { Store } from "../context/useStore";
 
 interface HomePageActions {
   navigate: (mondayISO: string) => void;
-  onSave: ReturnType<typeof useRowMutations>["onSave"];
-  onDelete: ReturnType<typeof useRowMutations>["onDelete"];
+  onSave: RowMutations["onSave"];
+  onDelete: RowMutations["onDelete"];
   onAddRow: (row: TimeRow) => void;
 }
 
 export function useHomePageData(store: Store): HomePageActions {
   const {
-    userId,
-    setUserId,
-    defaultItemId,
-    setDefaultItemId,
     weekISO,
-    setWeekISO,
     weekData,
+    setUserId,
+    setDefaultItemId,
+    setInitialized,
+    setWeekISO,
     setWeekData,
     setRefreshing,
-    setProjects,
-    setTasks,
-    setInitialized,
     setStatus,
     clearStatus,
-    setTransientStatus,
   } = store;
 
   const {
@@ -39,17 +34,11 @@ export function useHomePageData(store: Store): HomePageActions {
     currentWeekDataRef,
     localEditsRef,
     activeWeekRef,
-  } = useWeekCache(setWeekData, setRefreshing, setProjects, setTasks, {
-    setStatus,
-    clearStatus,
-  });
+  } = useWeekCache(store);
 
   const { onSave, onDelete } = useRowMutations({
-    setWeekData,
+    store,
     weekISO,
-    userId,
-    defaultItemId,
-    statusActions: { setStatus, setTransientStatus },
     currentWeekDataRef,
     localEditsRef,
   });
@@ -78,6 +67,7 @@ export function useHomePageData(store: Store): HomePageActions {
         );
       }
     };
+
     initialFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -96,7 +86,7 @@ export function useHomePageData(store: Store): HomePageActions {
   );
 
   const onAddRow = useCallback((row: TimeRow) => {
-    setWeekData((prev) =>
+    setWeekData((prev: typeof weekData) =>
       prev ? { ...prev, rows: [...prev.rows, row] } : prev,
     );
     // setWeekData is a stable useState setter

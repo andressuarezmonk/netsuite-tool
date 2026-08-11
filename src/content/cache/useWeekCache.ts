@@ -1,22 +1,12 @@
-import {
-  useCallback,
-  useRef,
-  type Dispatch,
-  type SetStateAction,
-  type MutableRefObject,
-} from "react";
+import { useCallback, useRef, type MutableRefObject } from "react";
 import { getMondayISO, todayISO } from "@/content/utils/dates";
 import { loadWeek } from "@/content/utils/api";
 import { getCached, setCached } from "@/content/utils/cache";
 import { mergeWeekData } from "@/content/utils/merge";
-import type { WeekData, Project, Task } from "@/content/utils/types";
+import type { WeekData } from "@/content/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
-
-type StatusActions = {
-  setStatus: (id: string, msg: string, kind: StatusKind) => void;
-  clearStatus: (id: string) => void;
-};
+import type { Store } from "../context/useStore";
 
 export interface WeekCacheHandle {
   loadWeekWithCache: (
@@ -29,14 +19,15 @@ export interface WeekCacheHandle {
   activeWeekRef: MutableRefObject<string>;
 }
 
-export function useWeekCache(
-  setWeekData: Dispatch<SetStateAction<WeekData | null>>,
-  setRefreshing: Dispatch<SetStateAction<boolean>>,
-  setProjects: Dispatch<SetStateAction<Project[]>>,
-  setTasks: Dispatch<SetStateAction<Record<string, Task[]>>>,
-  statusActions: StatusActions,
-): WeekCacheHandle {
-  const { setStatus, clearStatus } = statusActions;
+export function useWeekCache(store: Store): WeekCacheHandle {
+  const {
+    setWeekData,
+    setRefreshing,
+    setProjects,
+    setTasks,
+    setStatus,
+    clearStatus,
+  } = store;
 
   const currentWeekDataRef = useRef<WeekData | null>(null);
   const localEditsRef = useRef<Map<string, number>>(new Map());
