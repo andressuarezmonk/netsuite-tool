@@ -9,6 +9,7 @@ import { loadWeek, saveRow, deleteRow } from "@/content/utils/api";
 import { setCached } from "@/content/utils/cache";
 import { mergeWeekData } from "@/content/utils/merge";
 import { registerSave, waitForRowSave } from "@/content/utils/rowGate";
+import { useNSData } from "@/content/context/NSDataContext";
 import type { TimeRow, WeekData } from "@/content/utils/types";
 import type { Action } from "../utils/appReducer";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
@@ -47,6 +48,7 @@ export function useRowMutations({
   localEditsRef,
 }: Params): RowMutations {
   const { setStatus, setTransientStatus } = statusActions;
+  const { userId, defaultItemId } = useNSData();
 
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
   const saveDebounce = useRef(createKeyedDebounce()).current;
@@ -66,25 +68,28 @@ export function useRowMutations({
           setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
 
           const savePromise = (async () => {
-            await saveRow({
-              projId: row.projId,
-              projRaw: row.projRaw,
-              taskId: row.taskId,
-              taskRaw: row.taskRaw,
-              itemId: row.itemId,
-              weekISO,
-              dayKey,
-              hours,
-              memo,
-              timeid: row.days[dayKey]?.timeid ?? "",
-            });
-            localEditsRef.current.delete(editKey);
-            setTransientStatus(
-              StatusId.Mutation,
-              "✓ Saved",
-              StatusKind.Success,
+            await saveRow(
+              {
+                projId: row.projId,
+                projRaw: row.projRaw,
+                taskId: row.taskId,
+                taskRaw: row.taskRaw,
+                itemId: row.itemId,
+                weekISO,
+                dayKey,
+                hours,
+                memo,
+                timeid: row.days[dayKey]?.timeid ?? "",
+              },
+              userId,
+              defaultItemId,
             );
-            const fresh = await loadWeek(weekISO);
+            localEditsRef.current.delete(editKey);
+            const { weekData: fresh } = await loadWeek(
+              weekISO,
+              userId,
+              defaultItemId,
+            );
             await setCached(weekISO, fresh);
             dispatch({
               type: APP_ACTION_TYPE.SetData,
@@ -94,6 +99,11 @@ export function useRowMutations({
                 localEditsRef.current,
               ),
             });
+            setTransientStatus(
+              StatusId.Mutation,
+              "✓ Saved",
+              StatusKind.Success,
+            );
           })();
 
           // Register with the row gate so deletes on this row wait for us
@@ -122,6 +132,8 @@ export function useRowMutations({
       currentWeekDataRef,
       localEditsRef,
       saveDebounce,
+      userId,
+      defaultItemId,
     ],
   );
 
@@ -144,7 +156,11 @@ export function useRowMutations({
           "✓ Row deleted",
           StatusKind.Success,
         );
-        const fresh = await loadWeek(weekISO);
+        const { weekData: fresh } = await loadWeek(
+          weekISO,
+          userId,
+          defaultItemId,
+        );
         await setCached(weekISO, fresh);
       } catch (err) {
         setTransientStatus(
@@ -152,7 +168,11 @@ export function useRowMutations({
           `Delete failed: ${(err as Error).message}`,
           StatusKind.Error,
         );
-        const fresh = await loadWeek(weekISO);
+        const { weekData: fresh } = await loadWeek(
+          weekISO,
+          userId,
+          defaultItemId,
+        );
         await setCached(weekISO, fresh);
         dispatch({
           type: APP_ACTION_TYPE.SetData,
@@ -172,6 +192,8 @@ export function useRowMutations({
       currentWeekDataRef,
       localEditsRef,
       saveDebounce,
+      userId,
+      defaultItemId,
     ],
   );
 

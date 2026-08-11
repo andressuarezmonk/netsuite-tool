@@ -9,13 +9,15 @@ import StatusBar, { StatusKind } from "./components/atoms/StatusBar/StatusBar";
 import styles from "./components/App.module.scss";
 import { reducer, initialState, APP_ACTION_TYPE } from "./utils/appReducer";
 import { AppStateContext, AppActionsContext } from "./context/AppContext";
+import { NSDataProvider, useNSDataActions } from "./context/NSDataContext";
 import { createStatusActions } from "./utils/statusActions";
 import { StatusId } from "./constants/statusId";
 import { useWeekCache } from "./cache/useWeekCache";
 import { useRowMutations } from "./hooks/useRowMutations";
 
-export default function App() {
+function AppInner() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { setUserId, setDefaultItemId } = useNSDataActions();
 
   const { setStatus, clearStatus, setTransientStatus } = useMemo(
     () => createStatusActions(dispatch),
@@ -46,10 +48,12 @@ export default function App() {
     const initialFetch = async () => {
       try {
         evictOldWeeks();
-        await loadInit();
+        const { userId, defaultItemId } = await loadInit();
+        setUserId(userId);
+        setDefaultItemId(defaultItemId);
         dispatch({ type: APP_ACTION_TYPE.Initialized });
         clearStatus(StatusId.Init);
-        await loadWeekWithCache(state.weekISO);
+        await loadWeekWithCache(state.weekISO, userId, defaultItemId);
       } catch (err) {
         setStatus(
           StatusId.Init,
@@ -131,5 +135,13 @@ export default function App() {
         </div>
       </AppActionsContext.Provider>
     </AppStateContext.Provider>
+  );
+}
+
+export default function App() {
+  return (
+    <NSDataProvider>
+      <AppInner />
+    </NSDataProvider>
   );
 }

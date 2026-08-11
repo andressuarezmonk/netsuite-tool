@@ -1,4 +1,4 @@
-import { ApiClient, BASE_URL } from "./apiClient.service";
+import { ApiClient, BASE_URL, getHandlerParams } from "./apiClient.service";
 import type { DayKey } from "@/content/utils/constants";
 
 export const SaveEndpoints = {
@@ -15,7 +15,7 @@ interface NSSaveRowLine {
   timeid: string;
 }
 
-interface NSSaveRowBlock {
+export interface NSSaveRowBlock {
   emp: string;
   proj: string;
   projtask: string;
@@ -42,10 +42,9 @@ export type NSSaveRowResponse = NSSaveRowResponseItem[];
 // ── Requests ──────────────────────────────────────────────────────────────────
 
 export const saveRow = async (
-  scriptId: string,
-  deployId: string,
   block: NSSaveRowBlock,
 ): Promise<NSSaveRowResponse> => {
+  const { scriptId, deployId } = getHandlerParams();
   const response = await ApiClient.post<NSSaveRowResponse>(
     SaveEndpoints.Row,
     new URLSearchParams({

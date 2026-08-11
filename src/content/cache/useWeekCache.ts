@@ -8,6 +8,7 @@ import { getMondayISO, todayISO } from "@/content/utils/dates";
 import { loadWeek } from "@/content/utils/api";
 import { getCached, setCached } from "@/content/utils/cache";
 import { mergeWeekData } from "@/content/utils/merge";
+import { useNSData, useNSDataActions } from "@/content/context/NSDataContext";
 import type { WeekData } from "@/content/utils/types";
 import type { Action } from "../utils/appReducer";
 import { APP_ACTION_TYPE } from "../constants/appActionType";
@@ -21,7 +22,11 @@ type StatusActions = {
 
 export interface WeekCacheHandle {
   /** Load a week with cache-first strategy, background refresh, and stale-request guard. */
-  loadWeekWithCache: (mondayISO: string) => Promise<void>;
+  loadWeekWithCache: (
+    mondayISO: string,
+    userId?: string,
+    defaultItemId?: string,
+  ) => Promise<void>;
   /** The currently displayed WeekData — write into this after state changes so
    *  merges during background refresh use the latest data. */
   currentWeekDataRef: MutableRefObject<WeekData | null>;
@@ -36,13 +41,24 @@ export function useWeekCache(
   statusActions: StatusActions,
 ): WeekCacheHandle {
   const { setStatus, clearStatus } = statusActions;
+  const { userId, defaultItemId } = useNSData();
+  const { setProjects, setTasks } = useNSDataActions();
 
   const currentWeekDataRef = useRef<WeekData | null>(null);
   const localEditsRef = useRef<Map<string, number>>(new Map());
   const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
 
   const loadWeekWithCache = useCallback(
-    async (mondayISO: string) => {
+    async (
+      mondayISO: string,
+      freshUserId?: string,
+      freshDefaultItemId?: string,
+    ) => {
+      // Use passed-in values if provided (e.g. right after init before context re-renders),
+      // otherwise fall back to context state for subsequent navigations.
+      const resolvedUserId = freshUserId ?? userId;
+      const resolvedDefaultItemId = freshDefaultItemId ?? defaultItemId;
+
       activeWeekRef.current = mondayISO;
       localEditsRef.current = new Map();
 
@@ -65,12 +81,18 @@ export function useWeekCache(
       }
 
       try {
-        const fresh = await loadWeek(mondayISO);
+        const {
+          weekData: fresh,
+          projects,
+          tasks,
+        } = await loadWeek(mondayISO, resolvedUserId, resolvedDefaultItemId);
         if (activeWeekRef.current !== mondayISO) {
           await setCached(mondayISO, fresh);
           return;
         }
         await setCached(mondayISO, fresh);
+        setProjects(projects);
+        setTasks(tasks);
         const displayed = currentWeekDataRef.current;
         const merged = displayed
           ? mergeWeekData(displayed, fresh, localEditsRef.current)
@@ -96,7 +118,15 @@ export function useWeekCache(
         }
       }
     },
-    [dispatch, setStatus, clearStatus],
+    [
+      dispatch,
+      setStatus,
+      clearStatus,
+      userId,
+      defaultItemId,
+      setProjects,
+      setTasks,
+    ],
   );
 
   return {

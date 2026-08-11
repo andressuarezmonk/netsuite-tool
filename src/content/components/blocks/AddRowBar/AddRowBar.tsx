@@ -1,45 +1,24 @@
-import { useEffect, useRef, useState } from "react";
-import { getProjects, getTasks } from "@/content/utils/api";
-import type { TimeRow, Project } from "@/content/utils/types";
+import { useState } from "react";
+import { useNSData } from "@/content/context/NSDataContext";
+import type { TimeRow, Project, Task } from "@/content/utils/types";
 import { useAppActions } from "../../../context/AppContext";
 import s from "./AddRowBar.module.scss";
 
 export default function AddRowBar() {
   const { onAddRow } = useAppActions();
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { projects, tasks: allTasks } = useNSData();
   const [projId, setProjId] = useState("");
   const [taskId, setTaskId] = useState("");
-  const mountedRef = useRef(true);
 
-  useEffect(() => {
-    mountedRef.current = true;
-    const tryLoad = () => {
-      const p = getProjects();
-      if (p.length > 0) {
-        if (mountedRef.current) {
-          setProjects(p);
-          setLoading(false);
-        }
-      } else {
-        setTimeout(tryLoad, 200);
-      }
-    };
-    tryLoad();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  const tasks = projId ? getTasks(projId) : [];
-  const proj = projects.find((p) => p.id === projId);
-  const task = tasks.find((t) => t.id === taskId);
+  const tasks = projId ? (allTasks[projId] ?? []) : [];
+  const proj = projects.find((p: Project) => p.id === projId);
+  const task = tasks.find((t: Task) => t.id === taskId);
   const canAdd = projId !== "" && taskId !== "";
 
   const handleAdd = () => {
     if (!canAdd) return;
     const row: TimeRow = {
-      rowKey: `new_${Date.now()}`, // eslint-disable-line
+      rowKey: `new_${Date.now()}`,
       projId,
       taskId,
       itemId: "754",
@@ -56,7 +35,7 @@ export default function AddRowBar() {
 
   return (
     <div className={s.bar}>
-      {loading ? (
+      {projects.length === 0 ? (
         <>
           <span className={s.spinner} style={{ color: "#1a73e8" }} />
           <span className={s.loading}>Loading projects and tasks…</span>
@@ -72,7 +51,7 @@ export default function AddRowBar() {
             }}
           >
             <option value="">— Select project —</option>
-            {projects.map((p) => (
+            {projects.map((p: Project) => (
               <option key={p.id} value={p.id}>
                 {p.name}
               </option>
@@ -86,7 +65,7 @@ export default function AddRowBar() {
             disabled={!projId}
           >
             <option value="">— Select task —</option>
-            {tasks.map((t) => (
+            {tasks.map((t: Task) => (
               <option key={t.id} value={t.id}>
                 {t.name}
               </option>
