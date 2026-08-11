@@ -4,12 +4,38 @@ import { loadWeek } from "@/services/week.service";
 import { saveRow, deleteRow } from "@/services/row.service";
 import { setCached } from "@/utils/cache";
 import { mergeWeekData } from "@/utils/merge";
-import { registerSave, waitForRowSave } from "@/utils/rowGate";
 import type { TimeRow, WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import { createKeyedDebounce } from "../utils/keyedDebounce";
 import type { Store } from "../context/useStore";
+
+// ── Row gate ──────────────────────────────────────────────────────────────────
+// Tracks in-flight save promises keyed by rowKey so deletes never race
+// against a save that hasn't completed yet.
+
+const pendingSaves = new Map<string, Promise<void>>();
+
+function registerSave(rowKey: string, promise: Promise<void>): void {
+  pendingSaves.set(rowKey, promise);
+  promise.finally(() => {
+    if (pendingSaves.get(rowKey) === promise) {
+      pendingSaves.delete(rowKey);
+    }
+  });
+}
+
+async function waitForPendingSave(rowKey: string): Promise<void> {
+  const pending = pendingSaves.get(rowKey);
+  if (!pending) return;
+  try {
+    await pending;
+  } catch {
+    // Swallow — the save handler already reported the error to the user
+  }
+}
+
+// ── Hook ──────────────────────────────────────────────────────────────────────
 
 interface Params {
   store: Store;
@@ -92,7 +118,7 @@ export function useRowMutations({
             );
           })();
 
-          // Register with the row gate so deletes on this row wait for us
+          // Register so any delete on this row waits for us to finish
           registerSave(row.rowKey, savePromise);
 
           try {
@@ -132,7 +158,7 @@ export function useRowMutations({
       saveDebounce.cancelByPrefix(row.rowKey);
 
       // Wait for any in-flight save to settle before deleting
-      await waitForRowSave(row.rowKey);
+      await waitForPendingSave(row.rowKey);
 
       try {
         // Optimistically remove the row from UI while the delete is in flight

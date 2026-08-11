@@ -6,7 +6,11 @@
  */
 
 import type { WeekData } from "./types";
-import { storageGet, storageSet, storageRemove } from "./chromeStorage";
+import {
+  storageGet,
+  storageSet,
+  storageRemove,
+} from "../services/chromeStorage.service";
 
 const STORAGE_KEY_PREFIX = "week_";
 const MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
