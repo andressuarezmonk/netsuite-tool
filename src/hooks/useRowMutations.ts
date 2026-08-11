@@ -2,7 +2,7 @@ import { useCallback, useRef, type MutableRefObject } from "react";
 import { DAYS, type DayKey } from "@/utils/constants";
 import { loadWeek } from "@/services/week.service";
 import { saveRow, deleteRow } from "@/services/row.service";
-import { setCached } from "@/utils/cache";
+import { CacheService } from "@/services/cache.service";
 import { mergeWeekData } from "@/utils/merge";
 import type { TimeRow, WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
@@ -103,7 +103,7 @@ export function useRowMutations({
               userId,
               defaultItemId,
             );
-            await setCached(weekISO, fresh);
+            await CacheService.setCached(weekISO, fresh);
             setWeekData(
               mergeWeekData(
                 currentWeekDataRef.current ?? fresh,
@@ -179,7 +179,7 @@ export function useRowMutations({
           userId,
           defaultItemId,
         );
-        await setCached(weekISO, fresh);
+        await CacheService.setCached(weekISO, fresh);
         setWeekData(fresh);
       } catch (err) {
         setTransientStatus(
@@ -192,7 +192,7 @@ export function useRowMutations({
           userId,
           defaultItemId,
         );
-        await setCached(weekISO, fresh);
+        await CacheService.setCached(weekISO, fresh);
         setWeekData(
           mergeWeekData(
             currentWeekDataRef.current ?? fresh,

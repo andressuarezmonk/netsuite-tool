@@ -1,8 +1,6 @@
 import { useCallback, useRef, type MutableRefObject } from "react";
 import { getMondayISO, todayISO } from "@/utils/dates";
-import { loadWeek } from "@/services/week.service";
-import { getCached, setCached } from "@/utils/cache";
-import { mergeWeekData } from "@/utils/merge";
+import { CacheService } from "@/services/cache.service";
 import type { WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
@@ -41,7 +39,7 @@ export function useWeekCache(store: Store): WeekCacheHandle {
       activeWeekRef.current = mondayISO;
       localEditsRef.current = new Map();
 
-      const cached = await getCached(mondayISO);
+      const cached = await CacheService.getCached(mondayISO);
       if (activeWeekRef.current !== mondayISO) return;
 
       if (cached) {
@@ -57,26 +55,28 @@ export function useWeekCache(store: Store): WeekCacheHandle {
       }
 
       try {
-        const {
-          weekData: fresh,
-          projects,
-          tasks,
-        } = await loadWeek(mondayISO, userId, defaultItemId);
-        if (activeWeekRef.current !== mondayISO) {
-          await setCached(mondayISO, fresh);
-          return;
-        }
-        await setCached(mondayISO, fresh);
+        const { fresh, merged, projects, tasks } =
+          await CacheService.fetchAndCacheWeek(
+            mondayISO,
+            userId,
+            defaultItemId,
+            currentWeekDataRef.current,
+            localEditsRef.current,
+          );
+
+        if (activeWeekRef.current !== mondayISO) return;
+
         setProjects(projects);
         setTasks(tasks);
-        const displayed = currentWeekDataRef.current;
-        const merged = displayed
-          ? mergeWeekData(displayed, fresh, localEditsRef.current)
-          : fresh;
         setWeekData(merged);
         setRefreshing(false);
         clearStatus(StatusId.Cache);
         clearStatus(StatusId.Fetch);
+
+        // If navigation happened while fetching, still persist the fresh data
+        if (activeWeekRef.current !== mondayISO) {
+          await CacheService.setCached(mondayISO, fresh);
+        }
       } catch (err) {
         if (activeWeekRef.current !== mondayISO) return;
         if (!cached) {

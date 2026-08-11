@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from "react";
-import { evictOldWeeks } from "@/utils/cache";
+import { CacheService } from "@/services/cache.service";
 import { FetchService } from "@/services/fetch.service";
 import type { TimeRow } from "@/utils/types";
 import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
@@ -50,7 +50,7 @@ export function useHomePageData(store: Store): HomePageActions {
 
   const initialFetch = async () => {
     try {
-      evictOldWeeks();
+      CacheService.evictOldWeeks();
       const data = await FetchService.fetchInitial();
       const freshUserId = String(data.userid ?? "");
       const freshDefaultItemId = String(data.serviceitemtobedefault ?? "754");
