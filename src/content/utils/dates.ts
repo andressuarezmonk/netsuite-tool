@@ -95,3 +95,8 @@ export function dayIndexFromMonday(isoDate: string, mondayISO: string): number {
 export function dayKeyFromIndex(dayIndex: number): DayKey | null {
   return DAYS[dayIndex] ?? null;
 }
+
+/** "YYYY-MM-DD" → "DD/MM" for display in day column headers */
+export function isoDayMonthDisplay(isoDate: string): string {
+  return `${isoDate.slice(8)}/${isoDate.slice(5, 7)}`;
+}

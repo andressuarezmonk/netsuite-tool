@@ -1,5 +1,5 @@
 import { DAYS } from "@/content/utils/constants";
-import { addDays, todayISO } from "@/content/utils/dates";
+import { addDays, todayISO, isoDayMonthDisplay } from "@/content/utils/dates";
 import TimeRow from "../TimeRow/TimeRow";
 import DayTotals from "../DayTotals/DayTotals";
 import { useAppState } from "../../../context/AppContext";
@@ -28,7 +28,7 @@ export default function WeekGrid() {
               >
                 {DAY_LABELS[i]}
                 <span className={styles.dayDate}>
-                  {dayDates[i].slice(5).replace("-", "/")}
+                  {isoDayMonthDisplay(dayDates[i])}
                 </span>
               </th>
             ))}
