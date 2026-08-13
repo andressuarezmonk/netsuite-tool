@@ -3,6 +3,7 @@ import { DAYS, type DayKey } from "@/utils/constants";
 import { loadWeek } from "@/services/week.service";
 import { saveRow, deleteRow } from "@/services/row.service";
 import { CacheService } from "@/services/cache.service";
+import { SessionService } from "@/services/session.service";
 import { mergeWeekData } from "@/utils/merge";
 import { createKeyedAsyncDebounce } from "@/utils/debouncedAsync";
 import type { TimeRow, WeekData } from "@/utils/types";
@@ -57,8 +58,8 @@ export function useRowMutations({
   currentWeekDataRef,
   localEditsRef,
 }: UseRowMutations): RowMutations {
-  const { session, setWeek, setStatus, setTransientStatus } = store;
-  const { userId, defaultItemId } = session;
+  const { setWeek, setStatus, setTransientStatus } = store;
+  const { userId, defaultItemId } = SessionService.get();
   const setWeekData = (
     weekDataOrUpdater: WeekData | ((prev: WeekData | null) => WeekData | null),
   ) => {

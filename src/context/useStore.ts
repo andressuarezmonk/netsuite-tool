@@ -7,11 +7,6 @@ import {
 } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 
-export interface Session {
-  userId: string;
-  defaultItemId: string;
-}
-
 export interface Week {
   weekISO: string;
   weekData: WeekData | null;
@@ -25,11 +20,6 @@ export interface Catalog {
 }
 
 export function useStore() {
-  const [session, setSession] = useState<Session>({
-    userId: "",
-    defaultItemId: "754",
-  });
-
   const [week, setWeek] = useState<Week>({
     weekISO: getMondayISO(todayISO()),
     weekData: null,
@@ -82,8 +72,6 @@ export function useStore() {
   };
 
   return {
-    session,
-    setSession,
     week,
     setWeek,
     catalog,

@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from "react";
 import { CacheService } from "@/services/cache.service";
 import { FetchService } from "@/services/fetch.service";
+import { SessionService } from "@/services/session.service";
 import type { TimeRow } from "@/utils/types";
 import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
@@ -16,7 +17,7 @@ interface HomePageActions {
 }
 
 export function useHomePageData(store: Store): HomePageActions {
-  const { week, setWeek, setSession, setStatus, clearStatus } = store;
+  const { week, setWeek, setStatus, clearStatus } = store;
 
   const {
     loadWeekWithCache,
@@ -44,7 +45,10 @@ export function useHomePageData(store: Store): HomePageActions {
         const data = await FetchService.fetchInitial();
         const freshUserId = String(data.userid ?? "");
         const freshDefaultItemId = String(data.serviceitemtobedefault ?? "754");
-        setSession({ userId: freshUserId, defaultItemId: freshDefaultItemId });
+        SessionService.set({
+          userId: freshUserId,
+          defaultItemId: freshDefaultItemId,
+        });
         setWeek((prev) => ({ ...prev, initialized: true }));
         clearStatus(StatusId.Init);
         await loadWeekWithCache(week.weekISO, freshUserId, freshDefaultItemId);

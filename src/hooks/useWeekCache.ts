@@ -1,6 +1,7 @@
 import { useCallback, useRef, type MutableRefObject } from "react";
 import { getMondayISO, todayISO } from "@/utils/dates";
 import { CacheService } from "@/services/cache.service";
+import { SessionService } from "@/services/session.service";
 import type { WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
@@ -18,7 +19,7 @@ export interface WeekCacheHandle {
 }
 
 export function useWeekCache(store: Store): WeekCacheHandle {
-  const { setWeek, setCatalog, setStatus, clearStatus, session } = store;
+  const { setWeek, setCatalog, setStatus, clearStatus } = store;
 
   const currentWeekDataRef = useRef<WeekData | null>(null);
   const localEditsRef = useRef<Map<string, number>>(new Map());
@@ -32,8 +33,9 @@ export function useWeekCache(store: Store): WeekCacheHandle {
       freshUserId?: string,
       freshDefaultItemId?: string,
     ) => {
-      const resolvedUserId = freshUserId ?? session.userId;
-      const resolvedDefaultItemId = freshDefaultItemId ?? session.defaultItemId;
+      const resolvedUserId = freshUserId ?? SessionService.get().userId;
+      const resolvedDefaultItemId =
+        freshDefaultItemId ?? SessionService.get().defaultItemId;
 
       activeWeekRef.current = mondayISO;
       localEditsRef.current = new Map();
@@ -87,14 +89,7 @@ export function useWeekCache(store: Store): WeekCacheHandle {
         }
       }
     },
-    [
-      setWeek,
-      setCatalog,
-      setStatus,
-      clearStatus,
-      session.userId,
-      session.defaultItemId,
-    ],
+    [setWeek, setCatalog, setStatus, clearStatus],
   );
 
   return {

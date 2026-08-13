@@ -13,12 +13,11 @@ export default function HomePage() {
   const store = useStore();
   const { navigate, onSave, onDelete, onAddRow } = useHomePageData(store);
 
-  const { session, week, catalog, statuses, setStatus, clearStatus } = store;
+  const { week, catalog, statuses, setStatus, clearStatus } = store;
 
   return (
     <AppContext.Provider
       value={{
-        session,
         week,
         catalog,
         statuses,

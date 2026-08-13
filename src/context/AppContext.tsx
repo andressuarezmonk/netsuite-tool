@@ -5,10 +5,9 @@ import type {
   StatusKind,
   StatusEntry,
 } from "../components/atoms/StatusBar/StatusBar";
-import type { Store, Session, Week, Catalog } from "./useStore";
+import type { Store, Week, Catalog } from "./useStore";
 
 export interface AppStore {
-  session: Session;
   week: Week;
   catalog: Catalog;
   statuses: Record<string, StatusEntry>;
