@@ -4,7 +4,8 @@ import { useStore } from "../../../context/AppContext";
 import s from "./AddRowBar.module.scss";
 
 export default function AddRowBar() {
-  const { onAddRow, projects, tasks: allTasks } = useStore();
+  const { onAddRow, catalog } = useStore();
+  const { projects, tasks: allTasks } = catalog;
   const [projId, setProjId] = useState("");
   const [taskId, setTaskId] = useState("");
 

@@ -57,9 +57,19 @@ export function useRowMutations({
   currentWeekDataRef,
   localEditsRef,
 }: UseRowMutations): RowMutations {
-  const { userId, defaultItemId, setWeekData, setStatus, setTransientStatus } =
-    store;
-
+  const { session, setWeek, setStatus, setTransientStatus } = store;
+  const { userId, defaultItemId } = session;
+  const setWeekData = (
+    weekDataOrUpdater: WeekData | ((prev: WeekData | null) => WeekData | null),
+  ) => {
+    setWeek((prev) => ({
+      ...prev,
+      weekData:
+        typeof weekDataOrUpdater === "function"
+          ? weekDataOrUpdater(prev.weekData)
+          : weekDataOrUpdater,
+    }));
+  };
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
   const { debounce, cancelByPrefix } = useRef(
     createKeyedAsyncDebounce(),

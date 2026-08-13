@@ -1,23 +1,17 @@
 import { createContext, useContext } from "react";
-import type { TimeRow, WeekData, Project, Task } from "@/utils/types";
+import type { TimeRow } from "@/utils/types";
+import type { DayKey } from "@/utils/constants";
 import type {
   StatusKind,
   StatusEntry,
 } from "../components/atoms/StatusBar/StatusBar";
-import type { DayKey } from "@/utils/constants";
+import type { Store, Session, Week, Catalog } from "./useStore";
 
 export interface AppStore {
-  // NS data
-  userId: string;
-  defaultItemId: string;
-  projects: Project[];
-  tasks: Record<string, Task[]>;
-  // Week state
-  weekISO: string;
-  weekData: WeekData | null;
-  refreshing: boolean;
+  session: Session;
+  week: Week;
+  catalog: Catalog;
   statuses: Record<string, StatusEntry>;
-  initialized: boolean;
   // Actions
   navigate: (mondayISO: string) => void;
   onSave: (
@@ -39,3 +33,6 @@ export function useStore(): AppStore {
   if (!ctx) throw new Error("useStore must be used inside AppContext.Provider");
   return ctx;
 }
+
+// Re-export Store type for hooks that need internal access
+export type { Store };

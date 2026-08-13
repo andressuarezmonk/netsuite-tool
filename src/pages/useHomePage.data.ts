@@ -16,18 +16,7 @@ interface HomePageActions {
 }
 
 export function useHomePageData(store: Store): HomePageActions {
-  const {
-    weekISO,
-    weekData,
-    setUserId,
-    setDefaultItemId,
-    setInitialized,
-    setWeekISO,
-    setWeekData,
-    setRefreshing,
-    setStatus,
-    clearStatus,
-  } = store;
+  const { week, setWeek, setSession, setStatus, clearStatus } = store;
 
   const {
     loadWeekWithCache,
@@ -38,37 +27,35 @@ export function useHomePageData(store: Store): HomePageActions {
 
   const { onSave, onDelete } = useRowMutations({
     store,
-    weekISO,
+    weekISO: week.weekISO,
     currentWeekDataRef,
     localEditsRef,
   });
 
   // Keep currentWeekDataRef in sync so background merges use the latest data
   useEffect(() => {
-    currentWeekDataRef.current = weekData;
-  }, [weekData, currentWeekDataRef]);
-
-  const initialFetch = async () => {
-    try {
-      CacheService.evictOldWeeks();
-      const data = await FetchService.fetchInitial();
-      const freshUserId = String(data.userid ?? "");
-      const freshDefaultItemId = String(data.serviceitemtobedefault ?? "754");
-      setUserId(freshUserId);
-      setDefaultItemId(freshDefaultItemId);
-      setInitialized(true);
-      clearStatus(StatusId.Init);
-      await loadWeekWithCache(weekISO, freshUserId, freshDefaultItemId);
-    } catch (err) {
-      setStatus(
-        StatusId.Init,
-        `Init failed: ${(err as Error).message}`,
-        StatusKind.Error,
-      );
-    }
-  };
+    currentWeekDataRef.current = week.weekData;
+  }, [week.weekData, currentWeekDataRef]);
 
   useEffect(() => {
+    const initialFetch = async () => {
+      try {
+        CacheService.evictOldWeeks();
+        const data = await FetchService.fetchInitial();
+        const freshUserId = String(data.userid ?? "");
+        const freshDefaultItemId = String(data.serviceitemtobedefault ?? "754");
+        setSession({ userId: freshUserId, defaultItemId: freshDefaultItemId });
+        setWeek((prev) => ({ ...prev, initialized: true }));
+        clearStatus(StatusId.Init);
+        await loadWeekWithCache(week.weekISO, freshUserId, freshDefaultItemId);
+      } catch (err) {
+        setStatus(
+          StatusId.Init,
+          `Init failed: ${(err as Error).message}`,
+          StatusKind.Error,
+        );
+      }
+    };
     initialFetch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -76,21 +63,29 @@ export function useHomePageData(store: Store): HomePageActions {
   const navigate = useCallback(
     (mondayISO: string) => {
       activeWeekRef.current = mondayISO;
-      setWeekISO(mondayISO);
-      setWeekData(null);
-      setRefreshing(false);
+      setWeek((prev) => ({
+        ...prev,
+        weekISO: mondayISO,
+        weekData: null,
+        refreshing: false,
+      }));
       loadWeekWithCache(mondayISO);
     },
-    // setWeekISO, setWeekData, setRefreshing are stable useState setters
+    // setWeek is a stable useState setter
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [loadWeekWithCache, activeWeekRef],
   );
 
   const onAddRow = useCallback((row: TimeRow) => {
-    setWeekData((prev: typeof weekData) =>
-      prev ? { ...prev, rows: [...prev.rows, row] } : prev,
+    setWeek((prev) =>
+      prev.weekData
+        ? {
+            ...prev,
+            weekData: { ...prev.weekData, rows: [...prev.weekData.rows, row] },
+          }
+        : prev,
     );
-    // setWeekData is a stable useState setter
+    // setWeek is a stable useState setter
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

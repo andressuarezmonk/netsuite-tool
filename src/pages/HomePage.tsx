@@ -11,18 +11,31 @@ import { useHomePageData } from "./useHomePage.data";
 
 export default function HomePage() {
   const store = useStore();
-  const actions = useHomePageData(store);
+  const { navigate, onSave, onDelete, onAddRow } = useHomePageData(store);
 
-  const { initialized, ...storeState } = store;
+  const { session, week, catalog, statuses, setStatus, clearStatus } = store;
 
   return (
-    <AppContext.Provider value={{ ...storeState, initialized, ...actions }}>
+    <AppContext.Provider
+      value={{
+        session,
+        week,
+        catalog,
+        statuses,
+        setStatus,
+        clearStatus,
+        navigate,
+        onSave,
+        onDelete,
+        onAddRow,
+      }}
+    >
       <div className={styles.root}>
         <Header />
         <WeekNav />
         <StatusBar />
         <WeekGrid />
-        {initialized && <AddRowBar />}
+        {week.initialized && <AddRowBar />}
         <Footer />
       </div>
     </AppContext.Provider>

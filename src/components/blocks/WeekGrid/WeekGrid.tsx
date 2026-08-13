@@ -8,7 +8,8 @@ import styles from "./WeekGrid.module.scss";
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export default function WeekGrid() {
-  const { weekData, weekISO } = useStore();
+  const { week } = useStore();
+  const { weekData, weekISO } = week;
   const today = todayISO();
   const dayDates = DAYS.map((_, i) => addDays(weekISO, i));
 

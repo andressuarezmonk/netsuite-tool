@@ -7,16 +7,41 @@ import {
 } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 
-export function useStore() {
-  const [userId, setUserId] = useState("");
-  const [defaultItemId, setDefaultItemId] = useState("754");
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [tasks, setTasks] = useState<Record<string, Task[]>>({});
+export interface Session {
+  userId: string;
+  defaultItemId: string;
+}
 
-  const [weekISO, setWeekISO] = useState(getMondayISO(todayISO()));
-  const [weekData, setWeekData] = useState<WeekData | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [initialized, setInitialized] = useState(false);
+export interface Week {
+  weekISO: string;
+  weekData: WeekData | null;
+  refreshing: boolean;
+  initialized: boolean;
+}
+
+export interface Catalog {
+  projects: Project[];
+  tasks: Record<string, Task[]>;
+}
+
+export function useStore() {
+  const [session, setSession] = useState<Session>({
+    userId: "",
+    defaultItemId: "754",
+  });
+
+  const [week, setWeek] = useState<Week>({
+    weekISO: getMondayISO(todayISO()),
+    weekData: null,
+    refreshing: false,
+    initialized: false,
+  });
+
+  const [catalog, setCatalog] = useState<Catalog>({
+    projects: [],
+    tasks: {},
+  });
+
   const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({
     [StatusId.Init]: {
       id: StatusId.Init,
@@ -57,26 +82,13 @@ export function useStore() {
   };
 
   return {
-    // State
-    userId,
-    setUserId,
-    defaultItemId,
-    setDefaultItemId,
-    projects,
-    setProjects,
-    tasks,
-    setTasks,
-    weekISO,
-    setWeekISO,
-    weekData,
-    setWeekData,
-    refreshing,
-    setRefreshing,
-    initialized,
-    setInitialized,
+    session,
+    setSession,
+    week,
+    setWeek,
+    catalog,
+    setCatalog,
     statuses,
-
-    // Status helpers
     setStatus,
     clearStatus,
     setTransientStatus,

@@ -9,8 +9,8 @@ import type { Store } from "../context/useStore";
 export interface WeekCacheHandle {
   loadWeekWithCache: (
     mondayISO: string,
-    userId?: string,
-    defaultItemId?: string,
+    freshUserId?: string,
+    freshDefaultItemId?: string,
   ) => Promise<void>;
   currentWeekDataRef: MutableRefObject<WeekData | null>;
   localEditsRef: MutableRefObject<Map<string, number>>;
@@ -18,31 +18,23 @@ export interface WeekCacheHandle {
 }
 
 export function useWeekCache(store: Store): WeekCacheHandle {
-  const {
-    setWeekData,
-    setRefreshing,
-    setProjects,
-    setTasks,
-    setStatus,
-    clearStatus,
-    userId,
-    defaultItemId,
-  } = store;
+  const { setWeek, setCatalog, setStatus, clearStatus, session } = store;
 
   const currentWeekDataRef = useRef<WeekData | null>(null);
   const localEditsRef = useRef<Map<string, number>>(new Map());
   const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
 
   // freshUserId/freshDefaultItemId are passed in on first load to bypass the
-  // React state timing issue — on subsequent navigations the store values are used.
+  // React state timing issue — on subsequent navigations the session values are used.
   const loadWeekWithCache = useCallback(
     async (
       mondayISO: string,
       freshUserId?: string,
       freshDefaultItemId?: string,
     ) => {
-      const resolvedUserId = freshUserId ?? userId;
-      const resolvedDefaultItemId = freshDefaultItemId ?? defaultItemId;
+      const resolvedUserId = freshUserId ?? session.userId;
+      const resolvedDefaultItemId = freshDefaultItemId ?? session.defaultItemId;
+
       activeWeekRef.current = mondayISO;
       localEditsRef.current = new Map();
 
@@ -50,8 +42,7 @@ export function useWeekCache(store: Store): WeekCacheHandle {
       if (activeWeekRef.current !== mondayISO) return;
 
       if (cached) {
-        setWeekData(cached);
-        setRefreshing(true);
+        setWeek((prev) => ({ ...prev, weekData: cached, refreshing: true }));
         setStatus(
           StatusId.Cache,
           "Loaded from cache — refreshing…",
@@ -73,10 +64,8 @@ export function useWeekCache(store: Store): WeekCacheHandle {
 
         if (activeWeekRef.current !== mondayISO) return;
 
-        setProjects(projects);
-        setTasks(tasks);
-        setWeekData(merged);
-        setRefreshing(false);
+        setCatalog({ projects, tasks });
+        setWeek((prev) => ({ ...prev, weekData: merged, refreshing: false }));
         clearStatus(StatusId.Cache);
         clearStatus(StatusId.Fetch);
 
@@ -94,19 +83,17 @@ export function useWeekCache(store: Store): WeekCacheHandle {
           );
         } else {
           setStatus(StatusId.Cache, "⚠ Refresh failed", StatusKind.Error);
-          setRefreshing(false);
+          setWeek((prev) => ({ ...prev, refreshing: false }));
         }
       }
     },
     [
-      setWeekData,
-      setRefreshing,
-      setProjects,
-      setTasks,
+      setWeek,
+      setCatalog,
       setStatus,
       clearStatus,
-      userId,
-      defaultItemId,
+      session.userId,
+      session.defaultItemId,
     ],
   );
 
