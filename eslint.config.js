@@ -1,7 +1,6 @@
 import js from "@eslint/js";
 import tsPlugin from "@typescript-eslint/eslint-plugin";
 import tsParser from "@typescript-eslint/parser";
-import reactPlugin from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import prettierConfig from "eslint-config-prettier";
@@ -50,7 +49,6 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
-      'react':              reactPlugin,
       'react-hooks':        reactHooks,
       'react-refresh':      reactRefresh,
     },
@@ -64,12 +62,6 @@ export default [
       '@typescript-eslint/no-unused-vars':           ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/no-non-null-assertion':    'warn',
       '@typescript-eslint/consistent-type-imports':  ['warn', { prefer: 'type-imports' }],
-
-      // React — use flat config compatible approach
-      'react/display-name': 'off', // not useful with function components
-      'react/react-in-jsx-scope':  'off',
-      'react/prop-types':          'off',
-      'react/self-closing-comp':   'warn',
 
       // React hooks
       ...reactHooks.configs.recommended.rules,
