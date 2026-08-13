@@ -64,6 +64,7 @@ src/
     week.service.ts           # loadWeek — fetches 3 parallel windows, merges results
     cache.service.ts          # chrome.storage cache: get, set, evict, fetch-and-cache
     chromeStorage.service.ts  # Promise wrappers for chrome.storage.local
+    session.service.ts        # NS session data (userId, defaultItemId) via localStorage
 
   components/
     atoms/
@@ -102,7 +103,9 @@ src/
 
 ## Architecture
 
-State is managed with plain `useState` hooks in `useStore`, exposed through a single React context (`AppContext`). Components read from the store via `useStore()`.
+State is managed with three grouped `useState` calls in `useStore` — `week`, `catalog`, and `statuses` — exposed through a single React context (`AppContext`). Components read from the store via `useStore()`.
+
+Session data (`userId`, `defaultItemId`) is not kept in React state. It's written to `localStorage` once on init by `SessionService` and read synchronously from there by any hook that needs it.
 
 The data flow for a week load is:
 1. `useHomePage.data.ts` calls `loadWeekWithCache` on init and navigation

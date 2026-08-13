@@ -41,23 +41,30 @@ import { CacheService } from "@/services/cache.service";
 ## Architecture rules
 
 ### Services (`src/services/`)
-Own all I/O — HTTP calls, chrome storage, and domain operations that coordinate between multiple API calls. Services are plain async functions, no React.
+Own all I/O — HTTP calls, chrome storage, localStorage, and domain operations that coordinate between multiple API calls. Services are plain async functions, no React.
 
 - `fetch.service.ts` / `save.service.ts` / `delete.service.ts` — raw HTTP transport
 - `week.service.ts` — fetches 3 parallel NS week windows and merges them
 - `row.service.ts` — builds save/delete payloads and calls the transport layer
 - `cache.service.ts` — chrome.storage reads/writes + fetch-and-cache strategy
 - `chromeStorage.service.ts` — Promise wrappers for `chrome.storage.local`
+- `session.service.ts` — persists `userId` and `defaultItemId` in `localStorage` (use `window.localStorage`, not bare `localStorage`)
 
 ### State (`src/context/useStore.ts`)
-Only state that needs to be global in order to be shared by multiple components is stored here.
+Three grouped `useState` calls — `week`, `catalog`, and `statuses`. Session data is intentionally **not** in React state — it lives in `localStorage` via `SessionService`.
+
+- `week` — `{ weekISO, weekData, refreshing, initialized }`
+- `catalog` — `{ projects, tasks }`
+- `statuses` — map of active status messages
+
+Update grouped state with spread: `setWeek(prev => ({ ...prev, weekData: fresh }))`. Do not add individual flat state fields — group them into the appropriate domain object.
 
 ### Context (`src/context/AppContext.tsx`)
-`AppStore` extends `Store` with the two page-level actions (`navigate`, `onAddRow`) that come from `useHomePageData`. Components read from context via `useStore()`.
+`AppStore` exposes `week`, `catalog`, `statuses`, status helpers, and the four page-level actions (`navigate`, `onSave`, `onDelete`, `onAddRow`). Components read from context via `useStore()`.
 
 ### Hooks (`src/hooks/`)
-- `useWeekCache` — cache-first loading strategy, stale-request guard via `activeWeekRef`
-- `useRowMutations` — save debounce, row gate, optimistic delete
+- `useWeekCache` — cache-first loading strategy, stale-request guard via `activeWeekRef`. Reads session from `SessionService.get()`.
+- `useRowMutations` — save debounce, row gate, optimistic delete. Reads session from `SessionService.get()`.
 
 ### Pages (`src/pages/`)
 - `HomePage.tsx` — calls `useStore()` and `useHomePageData()`, provides context, renders layout
@@ -87,8 +94,9 @@ The NS data handler URL is dynamic — built at runtime from `window.location` s
 ## Adding a new feature
 
 1. If it requires an API call, add it to the appropriate service in `src/services/`
-2. If it requires new state, add it to `useStore.ts`
-3. If it's page-level logic (effects, derived actions), add it to `useHomePage.data.ts`
-4. If it's a UI element, add a component under `src/components/atoms/` or `src/components/blocks/`
-5. Expose any new store fields or actions through `AppStore` in `AppContext.tsx` if components need them
-6. Run `npx tsc --noEmit` and `npm run lint` before finishing
+2. If it requires new persistent data (like session info), use `localStorage` via a service — don't add it to `useStore`
+3. If it requires new reactive state, add a field to the appropriate group in `useStore.ts` (`week`, `catalog`, or `statuses`)
+4. If it's page-level logic (effects, derived actions), add it to `useHomePage.data.ts`
+5. If it's a UI element, add a component under `src/components/atoms/` or `src/components/blocks/`
+6. Expose any new store fields or actions through `AppStore` in `AppContext.tsx` if components need them
+7. Run `npx tsc --noEmit` and `npm run lint` before finishing
