@@ -23,22 +23,18 @@ export function useHomePageData(
   catalogStore: CatalogStore,
   statusStore: StatusStore,
 ): HomePageActions {
-  const { week, setWeek } = weekStore;
+  const { week, setWeek, currentWeekDataRef } = weekStore;
   const { setStatus, clearStatus } = statusStore;
 
-  const {
-    loadWeekWithCache,
-    currentWeekDataRef,
-    localEditsRef,
-    activeWeekRef,
-  } = useWeekCache(weekStore, catalogStore, statusStore);
-
+  const { loadWeekWithCache, activeWeekRef } = useWeekCache(
+    weekStore,
+    catalogStore,
+    statusStore,
+  );
   const { onSave, onDelete } = useRowMutations({
     weekStore,
     statusStore,
     weekISO: week.weekISO,
-    currentWeekDataRef,
-    localEditsRef,
   });
 
   // Keep currentWeekDataRef in sync so background merges use the latest data

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { getMondayISO, todayISO } from "@/utils/dates";
 import type { WeekData } from "@/utils/types";
 
@@ -17,7 +17,12 @@ export function useWeekStore() {
     initialized: false,
   });
 
-  return { week, setWeek };
+  // Shared refs used by useWeekCache and useRowMutations to coordinate
+  // background refreshes with in-flight saves and local edits.
+  const currentWeekDataRef = useRef<WeekData | null>(null);
+  const localEditsRef = useRef<Map<string, number>>(new Map());
+
+  return { week, setWeek, currentWeekDataRef, localEditsRef };
 }
 
 export type WeekStore = ReturnType<typeof useWeekStore>;

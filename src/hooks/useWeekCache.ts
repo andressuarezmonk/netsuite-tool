@@ -2,7 +2,6 @@ import { useCallback, useRef, type MutableRefObject } from "react";
 import { getMondayISO, todayISO } from "@/utils/dates";
 import { CacheService } from "@/services/cache.service";
 import { SessionService } from "@/services/session.service";
-import type { WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 import type { WeekStore } from "../context/useWeekStore";
@@ -15,8 +14,6 @@ export interface WeekCacheHandle {
     freshUserId?: string,
     freshDefaultItemId?: string,
   ) => Promise<void>;
-  currentWeekDataRef: MutableRefObject<WeekData | null>;
-  localEditsRef: MutableRefObject<Map<string, number>>;
   activeWeekRef: MutableRefObject<string>;
 }
 
@@ -25,12 +22,10 @@ export function useWeekCache(
   catalogStore: CatalogStore,
   statusStore: StatusStore,
 ): WeekCacheHandle {
-  const { setWeek } = weekStore;
+  const { setWeek, currentWeekDataRef, localEditsRef } = weekStore;
   const { setCatalog } = catalogStore;
   const { setStatus, clearStatus } = statusStore;
 
-  const currentWeekDataRef = useRef<WeekData | null>(null);
-  const localEditsRef = useRef<Map<string, number>>(new Map());
   const activeWeekRef = useRef<string>(getMondayISO(todayISO()));
 
   // freshUserId/freshDefaultItemId are passed in on first load to bypass the
@@ -96,13 +91,15 @@ export function useWeekCache(
         }
       }
     },
-    [setWeek, setCatalog, setStatus, clearStatus],
+    [
+      setWeek,
+      setCatalog,
+      setStatus,
+      clearStatus,
+      currentWeekDataRef,
+      localEditsRef,
+    ],
   );
 
-  return {
-    loadWeekWithCache,
-    currentWeekDataRef,
-    localEditsRef,
-    activeWeekRef,
-  };
+  return { loadWeekWithCache, activeWeekRef };
 }

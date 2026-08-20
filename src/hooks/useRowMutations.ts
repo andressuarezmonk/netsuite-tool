@@ -1,4 +1,4 @@
-import { useCallback, useRef, type MutableRefObject } from "react";
+import { useCallback, useRef } from "react";
 import { DAYS, type DayKey } from "@/utils/constants";
 import { loadWeek } from "@/services/week.service";
 import { saveRow, deleteRow } from "@/services/row.service";
@@ -40,8 +40,6 @@ interface UseRowMutations {
   weekStore: WeekStore;
   statusStore: StatusStore;
   weekISO: string;
-  currentWeekDataRef: MutableRefObject<WeekData | null>;
-  localEditsRef: MutableRefObject<Map<string, number>>;
 }
 
 export interface RowMutations {
@@ -58,23 +56,25 @@ export function useRowMutations({
   weekStore,
   statusStore,
   weekISO,
-  currentWeekDataRef,
-  localEditsRef,
 }: UseRowMutations): RowMutations {
-  const { setWeek } = weekStore;
+  const { setWeek, currentWeekDataRef, localEditsRef } = weekStore;
   const { setStatus, setTransientStatus } = statusStore;
   const { userId, defaultItemId } = SessionService.get();
-  const setWeekData = (
-    weekDataOrUpdater: WeekData | ((prev: WeekData | null) => WeekData | null),
-  ) => {
-    setWeek((prev) => ({
-      ...prev,
-      weekData:
-        typeof weekDataOrUpdater === "function"
-          ? weekDataOrUpdater(prev.weekData)
-          : weekDataOrUpdater,
-    }));
-  };
+  const setWeekData = useCallback(
+    (
+      weekDataOrUpdater:
+        WeekData | ((prev: WeekData | null) => WeekData | null),
+    ) => {
+      setWeek((prev) => ({
+        ...prev,
+        weekData:
+          typeof weekDataOrUpdater === "function"
+            ? weekDataOrUpdater(prev.weekData)
+            : weekDataOrUpdater,
+      }));
+    },
+    [setWeek],
+  );
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
   const { debounce, cancelByPrefix } = useRef(
     createKeyedAsyncDebounce(),
