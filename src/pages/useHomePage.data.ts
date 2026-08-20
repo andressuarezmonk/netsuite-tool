@@ -6,15 +6,12 @@ import type { TimeRow } from "@/utils/types";
 import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 import { useWeekCache } from "../hooks/useWeekCache";
-import { useRowMutations, type RowMutations } from "../hooks/useRowMutations";
 import type { WeekStore } from "../context/useWeekStore";
 import type { CatalogStore } from "../context/useCatalogStore";
 import type { StatusStore } from "../context/useStatusStore";
 
 interface HomePageActions {
   navigate: (mondayISO: string) => void;
-  onSave: RowMutations["onSave"];
-  onDelete: RowMutations["onDelete"];
   onAddRow: (row: TimeRow) => void;
 }
 
@@ -31,11 +28,6 @@ export function useHomePageData(
     catalogStore,
     statusStore,
   );
-  const { onSave, onDelete } = useRowMutations({
-    weekStore,
-    statusStore,
-    weekISO: week.weekISO,
-  });
 
   // Keep currentWeekDataRef in sync so background merges use the latest data
   useEffect(() => {
@@ -97,5 +89,5 @@ export function useHomePageData(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { navigate, onSave, onDelete, onAddRow };
+  return { navigate, onAddRow };
 }

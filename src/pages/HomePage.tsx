@@ -16,7 +16,7 @@ export default function HomePage() {
   const catalogStore = useCatalogStore();
   const statusStore = useStatusStore();
 
-  const { navigate, onSave, onDelete, onAddRow } = useHomePageData(
+  const { navigate, onAddRow } = useHomePageData(
     weekStore,
     catalogStore,
     statusStore,
@@ -29,14 +29,14 @@ export default function HomePage() {
   return (
     <AppContext.Provider
       value={{
+        weekStore,
+        statusStore,
         week,
         catalog,
         statuses,
         setStatus,
         clearStatus,
         navigate,
-        onSave,
-        onDelete,
         onAddRow,
       }}
     >

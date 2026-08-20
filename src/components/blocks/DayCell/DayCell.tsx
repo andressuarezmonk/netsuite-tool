@@ -3,6 +3,7 @@ import type { TimeRow } from "@/utils/types";
 import type { DayKey } from "@/utils/constants";
 import { formatHours } from "@/utils/dates";
 import { useStore } from "../../../context/AppContext";
+import { useRowMutations } from "../../../hooks/useRowMutations";
 import s from "./DayCell.module.scss";
 
 interface Props {
@@ -12,7 +13,12 @@ interface Props {
 }
 
 export default function DayCell({ row, dayKey, isToday }: Props) {
-  const { onSave } = useStore();
+  const { weekStore, statusStore, week } = useStore();
+  const { onSave } = useRowMutations({
+    weekStore,
+    statusStore,
+    weekISO: week.weekISO,
+  });
   const entry = row.days[dayKey];
   const [value, setValue] = useState(
     entry?.hours !== undefined ? formatHours(entry.hours) : "",
