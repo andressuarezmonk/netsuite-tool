@@ -5,7 +5,9 @@ import { SessionService } from "@/services/session.service";
 import type { WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
-import type { Store } from "../context/useStore";
+import type { WeekStore } from "../context/useWeekStore";
+import type { CatalogStore } from "../context/useCatalogStore";
+import type { StatusStore } from "../context/useStatusStore";
 
 export interface WeekCacheHandle {
   loadWeekWithCache: (
@@ -18,8 +20,14 @@ export interface WeekCacheHandle {
   activeWeekRef: MutableRefObject<string>;
 }
 
-export function useWeekCache(store: Store): WeekCacheHandle {
-  const { setWeek, setCatalog, setStatus, clearStatus } = store;
+export function useWeekCache(
+  weekStore: WeekStore,
+  catalogStore: CatalogStore,
+  statusStore: StatusStore,
+): WeekCacheHandle {
+  const { setWeek } = weekStore;
+  const { setCatalog } = catalogStore;
+  const { setStatus, clearStatus } = statusStore;
 
   const currentWeekDataRef = useRef<WeekData | null>(null);
   const localEditsRef = useRef<Map<string, number>>(new Map());
@@ -71,7 +79,6 @@ export function useWeekCache(store: Store): WeekCacheHandle {
         clearStatus(StatusId.Cache);
         clearStatus(StatusId.Fetch);
 
-        // If navigation happened while fetching, still persist the fresh data
         if (activeWeekRef.current !== mondayISO) {
           await CacheService.setCached(mondayISO, fresh);
         }

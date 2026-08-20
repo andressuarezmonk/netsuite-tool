@@ -6,14 +6,25 @@ import Header from "../components/blocks/Header/Header";
 import Footer from "../components/blocks/Footer/Footer";
 import styles from "./HomePage.module.scss";
 import { AppContext } from "../context/AppContext";
-import { useStore } from "../context/useStore";
+import { useWeekStore } from "../context/useWeekStore";
+import { useCatalogStore } from "../context/useCatalogStore";
+import { useStatusStore } from "../context/useStatusStore";
 import { useHomePageData } from "./useHomePage.data";
 
 export default function HomePage() {
-  const store = useStore();
-  const { navigate, onSave, onDelete, onAddRow } = useHomePageData(store);
+  const weekStore = useWeekStore();
+  const catalogStore = useCatalogStore();
+  const statusStore = useStatusStore();
 
-  const { week, catalog, statuses, setStatus, clearStatus } = store;
+  const { navigate, onSave, onDelete, onAddRow } = useHomePageData(
+    weekStore,
+    catalogStore,
+    statusStore,
+  );
+
+  const { week } = weekStore;
+  const { catalog } = catalogStore;
+  const { statuses, setStatus, clearStatus } = statusStore;
 
   return (
     <AppContext.Provider

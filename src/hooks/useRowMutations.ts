@@ -9,7 +9,8 @@ import { createKeyedAsyncDebounce } from "@/utils/debouncedAsync";
 import type { TimeRow, WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
-import type { Store } from "../context/useStore";
+import type { WeekStore } from "../context/useWeekStore";
+import type { StatusStore } from "../context/useStatusStore";
 
 // Tracks in-flight save promises keyed by rowKey so deletes never race
 // against a save that hasn't completed yet.
@@ -36,7 +37,8 @@ async function waitForPendingSave(rowKey: string): Promise<void> {
 }
 
 interface UseRowMutations {
-  store: Store;
+  weekStore: WeekStore;
+  statusStore: StatusStore;
   weekISO: string;
   currentWeekDataRef: MutableRefObject<WeekData | null>;
   localEditsRef: MutableRefObject<Map<string, number>>;
@@ -53,12 +55,14 @@ export interface RowMutations {
 }
 
 export function useRowMutations({
-  store,
+  weekStore,
+  statusStore,
   weekISO,
   currentWeekDataRef,
   localEditsRef,
 }: UseRowMutations): RowMutations {
-  const { setWeek, setStatus, setTransientStatus } = store;
+  const { setWeek } = weekStore;
+  const { setStatus, setTransientStatus } = statusStore;
   const { userId, defaultItemId } = SessionService.get();
   const setWeekData = (
     weekDataOrUpdater: WeekData | ((prev: WeekData | null) => WeekData | null),

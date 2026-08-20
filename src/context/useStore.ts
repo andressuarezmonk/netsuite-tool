@@ -1,86 +1,20 @@
-import { useRef, useState } from "react";
-import { getMondayISO, todayISO } from "@/utils/dates";
-import type { WeekData, Project, Task } from "@/utils/types";
-import {
-  StatusKind,
-  type StatusEntry,
-} from "../components/atoms/StatusBar/StatusBar";
-import { StatusId } from "../constants/statusId";
-
-export interface Week {
-  weekISO: string;
-  weekData: WeekData | null;
-  refreshing: boolean;
-  initialized: boolean;
-}
-
-export interface Catalog {
-  projects: Project[];
-  tasks: Record<string, Task[]>;
-}
+import { useWeekStore } from "./useWeekStore";
+import { useCatalogStore } from "./useCatalogStore";
+import { useStatusStore } from "./useStatusStore";
 
 export function useStore() {
-  const [week, setWeek] = useState<Week>({
-    weekISO: getMondayISO(todayISO()),
-    weekData: null,
-    refreshing: false,
-    initialized: false,
-  });
+  const weekStore = useWeekStore();
+  const catalogStore = useCatalogStore();
+  const statusStore = useStatusStore();
 
-  const [catalog, setCatalog] = useState<Catalog>({
-    projects: [],
-    tasks: {},
-  });
-
-  const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({
-    [StatusId.Init]: {
-      id: StatusId.Init,
-      msg: "Initializing…",
-      kind: StatusKind.Fetch,
-    },
-  });
-
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const setStatus = (id: string, msg: string, kind: StatusKind) => {
-    setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
-  };
-
-  const clearStatus = (id: string) => {
-    setStatuses((prev) => {
-      const next = { ...prev };
-      delete next[id];
-      return next;
-    });
-  };
-
-  const setTransientStatus = (
-    id: string,
-    msg: string,
-    kind: StatusKind,
-    ms = 2500,
-  ) => {
-    setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setStatuses((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-    }, ms);
-  };
-
-  return {
-    week,
-    setWeek,
-    catalog,
-    setCatalog,
-    statuses,
-    setStatus,
-    clearStatus,
-    setTransientStatus,
-  };
+  return { ...weekStore, ...catalogStore, ...statusStore };
 }
 
 export type Store = ReturnType<typeof useStore>;
+
+// Re-export focused store types for hooks that only need a slice
+export type { WeekStore } from "./useWeekStore";
+export type { CatalogStore } from "./useCatalogStore";
+export type { StatusStore } from "./useStatusStore";
+export type { Week } from "./useWeekStore";
+export type { Catalog } from "./useCatalogStore";

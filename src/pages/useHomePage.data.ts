@@ -7,7 +7,9 @@ import { StatusKind } from "../components/atoms/StatusBar/StatusBar";
 import { StatusId } from "../constants/statusId";
 import { useWeekCache } from "../hooks/useWeekCache";
 import { useRowMutations, type RowMutations } from "../hooks/useRowMutations";
-import type { Store } from "../context/useStore";
+import type { WeekStore } from "../context/useWeekStore";
+import type { CatalogStore } from "../context/useCatalogStore";
+import type { StatusStore } from "../context/useStatusStore";
 
 interface HomePageActions {
   navigate: (mondayISO: string) => void;
@@ -16,18 +18,24 @@ interface HomePageActions {
   onAddRow: (row: TimeRow) => void;
 }
 
-export function useHomePageData(store: Store): HomePageActions {
-  const { week, setWeek, setStatus, clearStatus } = store;
+export function useHomePageData(
+  weekStore: WeekStore,
+  catalogStore: CatalogStore,
+  statusStore: StatusStore,
+): HomePageActions {
+  const { week, setWeek } = weekStore;
+  const { setStatus, clearStatus } = statusStore;
 
   const {
     loadWeekWithCache,
     currentWeekDataRef,
     localEditsRef,
     activeWeekRef,
-  } = useWeekCache(store);
+  } = useWeekCache(weekStore, catalogStore, statusStore);
 
   const { onSave, onDelete } = useRowMutations({
-    store,
+    weekStore,
+    statusStore,
     weekISO: week.weekISO,
     currentWeekDataRef,
     localEditsRef,
