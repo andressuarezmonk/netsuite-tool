@@ -6,3 +6,9 @@ export enum StatusKind {
   Error = "error",
   None = "",
 }
+
+export interface StatusEntry {
+  id: string;
+  msg: string;
+  kind: StatusKind;
+}

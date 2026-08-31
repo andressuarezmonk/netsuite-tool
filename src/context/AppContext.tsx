@@ -1,22 +1,18 @@
 import { createContext, useContext } from "react";
-import type { TimeRow } from "@/utils/types";
-import type {
-  StatusKind,
-  StatusEntry,
-} from "../components/atoms/StatusBar/StatusBar";
+import type { StatusKind, StatusEntry } from "../constants/statusKind";
 import type { Week, WeekStore } from "./useWeekStore";
-import type { Catalog } from "./useCatalogStore";
+import type { Catalog, CatalogStore } from "./useCatalogStore";
 import type { StatusStore } from "./useStatusStore";
+import type { WeekCacheHandle } from "../hooks/useWeekCache";
 
 export interface AppStore {
   weekStore: WeekStore;
+  catalogStore: CatalogStore;
   statusStore: StatusStore;
+  weekCacheHandle: WeekCacheHandle;
   week: Week;
   catalog: Catalog;
   statuses: Record<string, StatusEntry>;
-  // Page-level actions
-  navigate: (mondayISO: string) => void;
-  onAddRow: (row: TimeRow) => void;
   setStatus: (id: string, msg: string, kind: StatusKind) => void;
   clearStatus: (id: string) => void;
 }

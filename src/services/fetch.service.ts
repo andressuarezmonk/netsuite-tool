@@ -48,7 +48,7 @@ export const fetchInitial = async (): Promise<NSInitialResponse> => {
   return response.data;
 };
 
-export const fetchWeek = async (
+const fetchWeek = async (
   weekNS: string,
   employeeId: string,
 ): Promise<NSWeekResponse> => {

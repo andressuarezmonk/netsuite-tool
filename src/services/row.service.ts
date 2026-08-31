@@ -5,14 +5,14 @@ import { SaveService } from "./save.service";
 import type { SaveRowParams } from "../utils/types";
 
 /** Delete all time records for a row (pass all timeid values from its days). */
-export async function deleteRow(timeids: string[]): Promise<void> {
+async function deleteRow(timeids: string[]): Promise<void> {
   const ids = timeids.filter((id) => id.trim() !== "");
   if (ids.length === 0) return; // nothing saved yet — just remove from UI
 
   await DeleteService.deleteRow(ids);
 }
 
-export async function saveRow(
+async function saveRow(
   params: SaveRowParams,
   userId: string,
   defaultItemId: string,

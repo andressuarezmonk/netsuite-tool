@@ -2,14 +2,6 @@ import { useStore } from "../../../context/AppContext";
 import { StatusKind } from "../../../constants/statusKind";
 import s from "./StatusBar.module.scss";
 
-export { StatusKind };
-
-export interface StatusEntry {
-  id: string;
-  msg: string;
-  kind: StatusKind;
-}
-
 const KIND_LABEL: Partial<Record<StatusKind, string>> = {
   [StatusKind.Cache]: "Cache",
   [StatusKind.Fetch]: "Fetching",

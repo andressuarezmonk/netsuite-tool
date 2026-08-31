@@ -1,8 +1,5 @@
 import { useRef, useState } from "react";
-import {
-  StatusKind,
-  type StatusEntry,
-} from "../components/atoms/StatusBar/StatusBar";
+import { StatusKind, type StatusEntry } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 
 export function useStatusStore() {

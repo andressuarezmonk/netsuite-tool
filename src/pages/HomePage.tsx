@@ -5,49 +5,19 @@ import StatusBar from "../components/atoms/StatusBar/StatusBar";
 import Header from "../components/blocks/Header/Header";
 import Footer from "../components/blocks/Footer/Footer";
 import styles from "./HomePage.module.scss";
-import { AppContext } from "../context/AppContext";
-import { useWeekStore } from "../context/useWeekStore";
-import { useCatalogStore } from "../context/useCatalogStore";
-import { useStatusStore } from "../context/useStatusStore";
-import { useHomePageData } from "./useHomePage.data";
+import { useStore } from "../context/AppContext";
 
 export default function HomePage() {
-  const weekStore = useWeekStore();
-  const catalogStore = useCatalogStore();
-  const statusStore = useStatusStore();
-
-  const { navigate, onAddRow } = useHomePageData(
-    weekStore,
-    catalogStore,
-    statusStore,
-  );
-
-  const { week } = weekStore;
-  const { catalog } = catalogStore;
-  const { statuses, setStatus, clearStatus } = statusStore;
+  const { week } = useStore();
 
   return (
-    <AppContext.Provider
-      value={{
-        weekStore,
-        statusStore,
-        week,
-        catalog,
-        statuses,
-        setStatus,
-        clearStatus,
-        navigate,
-        onAddRow,
-      }}
-    >
-      <div className={styles.root}>
-        <Header />
-        <WeekNav />
-        <StatusBar />
-        <WeekGrid />
-        {week.initialized && <AddRowBar />}
-        <Footer />
-      </div>
-    </AppContext.Provider>
+    <div className={styles.root}>
+      <Header />
+      <WeekNav />
+      <StatusBar />
+      <WeekGrid />
+      {week.initialized && <AddRowBar />}
+      <Footer />
+    </div>
   );
 }

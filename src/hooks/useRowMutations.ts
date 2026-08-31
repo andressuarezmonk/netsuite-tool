@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import { DAYS, type DayKey } from "@/utils/constants";
 import { loadWeek } from "@/services/week.service";
-import { saveRow, deleteRow } from "@/services/row.service";
+import { RowService } from "@/services/row.service";
 import { CacheService } from "@/services/cache.service";
 import { SessionService } from "@/services/session.service";
 import { mergeWeekData } from "@/utils/merge";
@@ -15,9 +15,11 @@ import type { StatusStore } from "../context/useStatusStore";
 // Tracks in-flight save promises keyed by rowKey so deletes never race
 // against a save that hasn't completed yet.
 
-const pendingSaves = new Map<string, Promise<void>>();
-
-function registerSave(rowKey: string, promise: Promise<void>): void {
+function registerSave(
+  pendingSaves: Map<string, Promise<void>>,
+  rowKey: string,
+  promise: Promise<void>,
+): void {
   pendingSaves.set(rowKey, promise);
   promise.finally(() => {
     if (pendingSaves.get(rowKey) === promise) {
@@ -26,7 +28,10 @@ function registerSave(rowKey: string, promise: Promise<void>): void {
   });
 }
 
-async function waitForPendingSave(rowKey: string): Promise<void> {
+async function waitForPendingSave(
+  pendingSaves: Map<string, Promise<void>>,
+  rowKey: string,
+): Promise<void> {
   const pending = pendingSaves.get(rowKey);
   if (!pending) return;
   try {
@@ -57,7 +62,8 @@ export function useRowMutations({
   statusStore,
   weekISO,
 }: UseRowMutations): RowMutations {
-  const { setWeek, currentWeekDataRef, localEditsRef } = weekStore;
+  const { setWeek, currentWeekDataRef, localEditsRef, pendingSavesRef } =
+    weekStore;
   const { setStatus, setTransientStatus } = statusStore;
   const { userId, defaultItemId } = SessionService.get();
   const setWeekData = useCallback(
@@ -92,7 +98,7 @@ export function useRowMutations({
       setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
 
       const savePromise = debounce(cellKey, 400, async () => {
-        await saveRow(
+        await RowService.saveRow(
           {
             projId: row.projId,
             projRaw: row.projRaw,
@@ -126,7 +132,7 @@ export function useRowMutations({
       });
 
       // Register so any delete on this row waits for us to finish
-      registerSave(row.rowKey, savePromise);
+      registerSave(pendingSavesRef.current, row.rowKey, savePromise);
 
       try {
         await savePromise;
@@ -150,6 +156,7 @@ export function useRowMutations({
       userId,
       defaultItemId,
       debounce,
+      pendingSavesRef,
     ],
   );
 
@@ -162,7 +169,7 @@ export function useRowMutations({
       cancelByPrefix(row.rowKey);
 
       // Wait for any in-flight save to settle before deleting
-      await waitForPendingSave(row.rowKey);
+      await waitForPendingSave(pendingSavesRef.current, row.rowKey);
 
       try {
         // Optimistically remove the row from UI while the delete is in flight
@@ -172,7 +179,7 @@ export function useRowMutations({
             (r) => r.rowKey !== row.rowKey,
           ),
         });
-        await deleteRow(timeids);
+        await RowService.deleteRow(timeids);
         setTransientStatus(
           StatusId.Mutation,
           "✓ Row deleted",
@@ -216,6 +223,7 @@ export function useRowMutations({
       userId,
       defaultItemId,
       localEditsRef,
+      pendingSavesRef,
     ],
   );
 
