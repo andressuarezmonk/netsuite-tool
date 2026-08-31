@@ -2,7 +2,18 @@
 
 A Chrome extension that replaces the slow NetSuite Weekly Time Entry page with a fast React UI.
 
-## Setup
+## Installation
+
+1. Go to the [Releases](../../releases) page and download the `dist.zip` from the latest release
+2. Extract the zip — you'll get a `dist/` folder
+3. Open your Chromium-based browser (Chrome, Edge, Brave, etc.) and navigate to the extensions page:
+   - Chrome / Brave: `chrome://extensions`
+   - Edge: `edge://extensions`
+4. Enable **Developer mode** (toggle in the top-right corner)
+5. Click **Load unpacked** and select the extracted `dist/` folder
+6. The extension is now active — navigate to your NetSuite Weekly Time Entry page to use it
+
+## Setup (for development)
 
 ```bash
 npm install
