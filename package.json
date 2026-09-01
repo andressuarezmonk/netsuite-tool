@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "netsuite-fast-tracker",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "Fast time entry Chrome extension for NetSuite",
   "scripts": {
     "dev": "vite build --watch",
