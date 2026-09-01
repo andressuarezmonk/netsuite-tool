@@ -6,7 +6,7 @@ import s from "./AddRowBar.module.scss";
 
 export default function AddRowBar() {
   const {
-    catalog,
+    catalogStore: { catalog },
     weekStore: { setWeek },
   } = useStore();
   const { projects, tasks: allTasks } = catalog;

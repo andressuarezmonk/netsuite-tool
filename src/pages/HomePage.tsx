@@ -8,7 +8,7 @@ import styles from "./HomePage.module.scss";
 import { useStore } from "../context/AppContext";
 
 export default function HomePage() {
-  const { week } = useStore();
+  const { initialized } = useStore().weekStore.week;
 
   return (
     <div className={styles.root}>
@@ -16,7 +16,7 @@ export default function HomePage() {
       <WeekNav />
       <StatusBar />
       <WeekGrid />
-      {week.initialized && <AddRowBar />}
+      {initialized && <AddRowBar />}
       <Footer />
     </div>
   );

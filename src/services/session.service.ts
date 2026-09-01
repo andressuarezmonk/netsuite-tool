@@ -5,6 +5,8 @@
  * Keys are scoped to the extension to avoid colliding with NS's own localStorage usage.
  */
 
+import { DEFAULT_ITEM_ID } from "../constants/nsEnums";
+
 const KEY_USER_ID = "ft_userId";
 const KEY_DEFAULT_ITEM_ID = "ft_defaultItemId";
 
@@ -13,14 +15,14 @@ export interface Session {
   defaultItemId: string;
 }
 
-const EMPTY_SESSION: Session = { userId: "", defaultItemId: "754" };
+const EMPTY_SESSION: Session = { userId: "", defaultItemId: DEFAULT_ITEM_ID };
 
 export const SessionService = {
   get(): Session {
     const userId = window.localStorage.getItem(KEY_USER_ID);
     const defaultItemId = window.localStorage.getItem(KEY_DEFAULT_ITEM_ID);
     if (!userId) return EMPTY_SESSION;
-    return { userId, defaultItemId: defaultItemId ?? "754" };
+    return { userId, defaultItemId: defaultItemId ?? DEFAULT_ITEM_ID };
   },
 
   set(session: Session): void {

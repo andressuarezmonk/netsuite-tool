@@ -63,7 +63,6 @@ async function evictOldWeeks(): Promise<void> {
 // ── Cache-first fetch strategy ────────────────────────────────────────────────
 
 interface CachedWeekResult {
-  cached: WeekData | null;
   fresh: WeekData;
   merged: WeekData;
   projects: Project[];
@@ -82,7 +81,6 @@ async function fetchAndCacheWeek(
   displayedWeekData: WeekData | null,
   localEdits: Map<string, number>,
 ): Promise<CachedWeekResult> {
-  const cached = await getCached(mondayISO);
   const {
     weekData: fresh,
     projects,
@@ -92,7 +90,7 @@ async function fetchAndCacheWeek(
   const merged = displayedWeekData
     ? mergeWeekData(displayedWeekData, fresh, localEdits)
     : fresh;
-  return { cached, fresh, merged, projects, tasks };
+  return { fresh, merged, projects, tasks };
 }
 
 export const CacheService = {

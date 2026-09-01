@@ -39,7 +39,6 @@ export interface Task {
 }
 
 export interface SaveRowParams {
-  projId: string;
   projRaw: string;
   taskId: string;
   taskRaw: string;

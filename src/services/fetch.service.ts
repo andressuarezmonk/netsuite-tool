@@ -1,5 +1,5 @@
 import { ApiClient, BASE_URL, getHandlerParams } from "./apiClient.service";
-import type { NSApprovalStatus, NSRejectedStatus } from "../constants/nsEnums";
+import type { NSApprovalStatus, NSSubmittedStatus } from "../constants/nsEnums";
 
 export const FetchEndpoints = {
   Initial: `${BASE_URL}?opType=fetch&requestType=init`,
@@ -18,7 +18,7 @@ interface NSRawTimeEntry {
   memo: string;
   internalid: string; // timeid
   approval: NSApprovalStatus;
-  rejected: NSRejectedStatus;
+  rejected: NSSubmittedStatus;
   disableLine: boolean;
 }
 

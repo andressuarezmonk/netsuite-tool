@@ -24,7 +24,7 @@ const SPINNER_KINDS: StatusKind[] = [
 ];
 
 export default function StatusBar() {
-  const { statuses } = useStore();
+  const { statuses } = useStore().statusStore;
   const visible = Object.values(statuses).filter((st) => st.msg);
   if (visible.length === 0) return null;
 
