@@ -57,6 +57,40 @@
   }
 }
 
+.divider {
+  width: 1px;
+  height: 24px;
+  background: $border;
+  flex-shrink: 0;
+}
+
+.copyBtn {
+  background: transparent;
+  color: $text-muted;
+  border: 1.5px solid $border-input;
+  padding: 7px 14px;
+  border-radius: $radius;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background $t,
+    border-color $t,
+    color $t,
+    opacity $t;
+
+  &:hover:not(:disabled) {
+    background: $surface-muted;
+    border-color: $primary;
+    color: $primary;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
 // Spinner reuse (imported from StatusBar context via shadow root)
 .spinner {
   @include spinner(10px, 1.5px);

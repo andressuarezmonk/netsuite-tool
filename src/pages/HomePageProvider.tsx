@@ -5,6 +5,7 @@ import { useCatalogStore } from "../context/useCatalogStore";
 import { useStatusStore } from "../context/useStatusStore";
 import { useWeekCache } from "../hooks/useWeekCache";
 import { useRowMutations } from "../hooks/useRowMutations";
+import { useWeekCopy } from "../hooks/useWeekCopy";
 import { CacheService } from "@/services/cache.service";
 import { FetchService } from "@/services/fetch.service";
 import { SessionService } from "@/services/session.service";
@@ -19,6 +20,11 @@ export default function HomePageProvider() {
   const statusStore = useStatusStore();
   const weekCacheHandle = useWeekCache(weekStore, catalogStore, statusStore);
   const { onSave, onDelete } = useRowMutations({
+    weekStore,
+    statusStore,
+    weekISO: weekStore.week.weekISO,
+  });
+  const { onCopyPreviousWeek } = useWeekCopy({
     weekStore,
     statusStore,
     weekISO: weekStore.week.weekISO,
@@ -70,6 +76,7 @@ export default function HomePageProvider() {
         weekCacheHandle,
         onSave,
         onDelete,
+        onCopyPreviousWeek,
       }}
     >
       <HomePage />
