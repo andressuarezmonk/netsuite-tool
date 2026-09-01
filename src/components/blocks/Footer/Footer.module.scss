@@ -13,11 +13,14 @@
   }
 }
 
-.updateBanner {
-  display: block;
-  margin-bottom: 4px;
+.version {
+  color: $text-light;
+  margin-right: 8px;
+}
+
+.versionUpdate {
   color: $color-mutation;
-  font-size: 11px;
+  margin-right: 8px;
 
   a {
     color: $color-mutation;

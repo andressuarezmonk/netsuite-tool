@@ -12,22 +12,27 @@ export default function Footer() {
 
   useEffect(() => {
     VersionService.check().then((result) => {
-      if (result?.hasUpdate) {
-        setVersionCheck(result);
-      }
+      setVersionCheck(result);
     });
   }, []);
 
+  const currentVersion = chrome.runtime.getManifest().version;
+  const hasUpdate = versionCheck?.hasUpdate ?? false;
+
   return (
     <footer className={styles.footer}>
-      {versionCheck && (
-        <span className={styles.updateBanner}>
-          ↑ v{versionCheck.latestVersion} available —{" "}
-          <a href={versionCheck.releaseUrl} target="_blank" rel="noreferrer">
-            download
-          </a>
-        </span>
-      )}
+      <span className={hasUpdate ? styles.versionUpdate : styles.version}>
+        v{currentVersion}
+        {hasUpdate && versionCheck && (
+          <>
+            {" "}
+            · ↑ v{versionCheck.latestVersion} available —{" "}
+            <a href={versionCheck.releaseUrl} target="_blank" rel="noreferrer">
+              download
+            </a>
+          </>
+        )}
+      </span>
       Fast Time Tracker · <a href={window.location.origin}>NetSuite Home</a>
     </footer>
   );
