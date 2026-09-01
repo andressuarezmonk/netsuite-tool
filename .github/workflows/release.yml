@@ -49,3 +49,16 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           TAG="v$VERSION"
           gh release upload "$TAG" dist.zip --clobber
+
+      # Merge the version bump commit that semantic-release pushed to master
+      # back into develop so the two branches stay in sync.
+      - name: Sync version bump back to develop
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin develop
+          git checkout develop
+          git merge master --no-edit
+          git push origin develop
