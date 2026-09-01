@@ -6,7 +6,7 @@ import {
   dayKeyFromIndex,
   nsToHours,
 } from "../utils/dates";
-import { NSApprovalStatus, NSRejectedStatus } from "../constants/nsEnums";
+import { NSApprovalStatus, NSSubmittedStatus } from "../constants/nsEnums";
 import { FetchService, type NSWeekResponse } from "./fetch.service";
 import type { Project, Task, TimeRow, WeekData } from "../utils/types";
 
@@ -106,7 +106,7 @@ export async function loadWeek(
             // "rejected=3" means submitted/pending; only flag as submitted if not already approved
             submitted:
               entry.approval !== NSApprovalStatus.Approved &&
-              entry.rejected === NSRejectedStatus.Submitted,
+              entry.rejected === NSSubmittedStatus.Submitted,
             disabled: entry.disableLine === true,
           };
         }
@@ -143,5 +143,3 @@ export async function loadWeek(
 
   return { weekData: { rows, weekStart: mondayISO }, projects, tasks };
 }
-
-export const WeekService = { loadWeek };

@@ -29,9 +29,9 @@ function weekValueToISO(weekVal: string): string {
 }
 
 export default function WeekNav() {
-  const { week } = useStore();
-  const { weekISO } = week;
-  const navigate = useNavigation();
+  const { weekStore, weekCacheHandle } = useStore();
+  const { weekISO } = weekStore.week;
+  const navigate = useNavigation(weekStore, weekCacheHandle);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;

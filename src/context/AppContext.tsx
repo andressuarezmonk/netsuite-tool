@@ -1,20 +1,17 @@
 import { createContext, useContext } from "react";
-import type { StatusKind, StatusEntry } from "../constants/statusKind";
-import type { Week, WeekStore } from "./useWeekStore";
-import type { Catalog, CatalogStore } from "./useCatalogStore";
+import type { WeekStore } from "./useWeekStore";
+import type { CatalogStore } from "./useCatalogStore";
 import type { StatusStore } from "./useStatusStore";
 import type { WeekCacheHandle } from "../hooks/useWeekCache";
+import type { RowMutations } from "../hooks/useRowMutations";
 
 export interface AppStore {
   weekStore: WeekStore;
   catalogStore: CatalogStore;
   statusStore: StatusStore;
   weekCacheHandle: WeekCacheHandle;
-  week: Week;
-  catalog: Catalog;
-  statuses: Record<string, StatusEntry>;
-  setStatus: (id: string, msg: string, kind: StatusKind) => void;
-  clearStatus: (id: string) => void;
+  onSave: RowMutations["onSave"];
+  onDelete: RowMutations["onDelete"];
 }
 
 export const AppContext = createContext<AppStore | null>(null);

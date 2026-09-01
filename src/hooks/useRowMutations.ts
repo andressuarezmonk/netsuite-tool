@@ -100,7 +100,6 @@ export function useRowMutations({
       const savePromise = debounce(cellKey, 400, async () => {
         await RowService.saveRow(
           {
-            projId: row.projId,
             projRaw: row.projRaw,
             taskId: row.taskId,
             taskRaw: row.taskRaw,

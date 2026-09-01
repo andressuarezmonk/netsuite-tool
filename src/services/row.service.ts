@@ -52,8 +52,7 @@ async function saveRow(
     ],
   });
 
-  let anySaved = false;
-  for (const item of items) {
+  items.forEach((item) => {
     if (
       item.errors &&
       item.errors !== "" &&
@@ -61,13 +60,13 @@ async function saveRow(
     ) {
       throw new Error(item.errors);
     }
-    if (
+  });
+
+  const anySaved = items.some(
+    (item) =>
       (item.created && item.created.length > 0) ||
-      (item.updated && item.updated.length > 0)
-    ) {
-      anySaved = true;
-    }
-  }
+      (item.updated && item.updated.length > 0),
+  );
 
   if (!anySaved) {
     throw new Error(

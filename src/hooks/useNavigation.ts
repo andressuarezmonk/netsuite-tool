@@ -1,11 +1,13 @@
 import { useCallback } from "react";
-import { useStore } from "@/context/AppContext";
+import type { WeekStore } from "@/context/useWeekStore";
+import type { WeekCacheHandle } from "./useWeekCache";
 
-export function useNavigation(): (mondayISO: string) => void {
-  const {
-    weekStore: { setWeek },
-    weekCacheHandle: { loadWeekWithCache, activeWeekRef },
-  } = useStore();
+export function useNavigation(
+  weekStore: WeekStore,
+  weekCacheHandle: WeekCacheHandle,
+): (mondayISO: string) => void {
+  const { setWeek } = weekStore;
+  const { loadWeekWithCache, activeWeekRef } = weekCacheHandle;
 
   return useCallback(
     (mondayISO: string) => {
@@ -18,7 +20,6 @@ export function useNavigation(): (mondayISO: string) => void {
       }));
       loadWeekWithCache(mondayISO);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [loadWeekWithCache, activeWeekRef],
+    [loadWeekWithCache, activeWeekRef, setWeek],
   );
 }
