@@ -13,6 +13,14 @@ A Chrome extension that replaces the slow NetSuite Weekly Time Entry page with a
 5. Click **Load unpacked** and select the extracted `dist/` folder
 6. The extension is now active — navigate to your NetSuite Weekly Time Entry page to use it
 
+## Updating
+
+The extension checks for updates automatically on each page load. When a new version is available, a banner appears in the footer:
+
+> ↑ v1.x.x available — download
+
+Click **download** to go to the releases page, grab the new `dist.zip`, extract it, and reload the extension in `chrome://extensions` using the refresh icon. The whole process takes about 30 seconds.
+
 ## Setup (for development)
 
 ```bash
@@ -76,6 +84,7 @@ src/
     cache.service.ts          # chrome.storage cache: get, set, evict, fetch-and-cache
     chromeStorage.service.ts  # Promise wrappers for chrome.storage.local
     session.service.ts        # NS session data (userId, defaultItemId) via localStorage
+    version.service.ts        # Checks GitHub API for a newer release; used by Footer
 
   components/
     atoms/
@@ -83,7 +92,7 @@ src/
       WeekNav/     # Prev/next/today/week-picker navigation
     blocks/
       Header/      # Page header with title and bypass link
-      Footer/      # Page footer
+      Footer/      # Page footer — also shows update-available banner when a new version is detected
       WeekGrid/    # Weekly table — renders rows and day column headers
       TimeRow/     # Single project/task row with delete button
       DayCell/     # Individual hour input cell
@@ -111,6 +120,18 @@ src/
     index.tsx      # Popup entry point
     PopupApp.tsx   # Popup UI
 ```
+
+## Release pipeline
+
+Pushing a `feat:` or `fix:` commit to `main`/`master` triggers the GitHub Actions release workflow:
+
+1. `semantic-release` analyzes commit messages, bumps `package.json`, tags the release, and creates a GitHub Release
+2. The build runs after the version bump so `dist/manifest.json` picks up the new version
+3. `dist.zip` is uploaded to the release as the installable artifact
+
+The extension manifest version is read directly from `package.json` at build time (`vite.config.ts`), so it always matches the release tag.
+
+The extension checks `api.github.com` for a newer `tag_name` on each page load and shows a footer banner when one is found.
 
 ## Architecture
 

@@ -49,6 +49,7 @@ Own all I/O — HTTP calls, chrome storage, localStorage, and domain operations 
 - `cache.service.ts` — chrome.storage reads/writes + fetch-and-cache strategy
 - `chromeStorage.service.ts` — Promise wrappers for `chrome.storage.local`
 - `session.service.ts` — persists `userId` and `defaultItemId` in `localStorage` (use `window.localStorage`, not bare `localStorage`)
+- `version.service.ts` — calls `api.github.com` to check for a newer release; returns `VersionCheckResult | null`. Safe to call from a content script — the GitHub API sends CORS headers. Failures are silent (returns `null`).
 
 ### State (`src/context/useStore.ts`)
 Three grouped `useState` calls — `week`, `catalog`, and `statuses`. Session data is intentionally **not** in React state — it lives in `localStorage` via `SessionService`.
@@ -74,6 +75,12 @@ Update grouped state with spread: `setWeek(prev => ({ ...prev, weekData: fresh }
 ### Components (`src/components/`)
 - `atoms/` — small, no direct API calls or store mutations
 - `blocks/` — larger UI blocks; may read from `useStore()` but do not own state
+- `Footer` — calls `VersionService.check()` on mount; if `hasUpdate` is true, renders an update banner above the footer text. Self-contained — no store state involved.
+
+### Mocks (`src/mocks/`)
+Development stubs for visual testing. Never imported in production code paths.
+
+- `version.ts` — exports `MOCK_VERSION_CHECK: VersionCheckResult` for stubbing the Footer update banner during development
 
 ## NetSuite API specifics
 
@@ -90,6 +97,12 @@ All three responses are merged before returning `WeekData`.
 
 ### Handler URL
 The NS data handler URL is dynamic — built at runtime from `window.location` since the account ID is part of the hostname. `getHandlerParams()` in `apiClient.service.ts` extracts `script` and `deploy` query params from the current handler URL.
+
+## Manifest and versioning
+
+The extension manifest is generated at build time in `vite.config.ts`. The `version` field is read from `package.json` — never hardcode it in `vite.config.ts`. When `semantic-release` bumps `package.json`, the next build automatically picks up the new version.
+
+`host_permissions` in `vite.config.ts` includes `https://api.github.com/*` to allow `VersionService` to call the GitHub REST API from the content script context.
 
 ## Adding a new feature
 
