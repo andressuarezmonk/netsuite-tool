@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { StatusKind, type StatusEntry } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
 
@@ -13,34 +13,32 @@ export function useStatusStore() {
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const setStatus = (id: string, msg: string, kind: StatusKind) => {
+  const setStatus = useCallback((id: string, msg: string, kind: StatusKind) => {
     setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
-  };
+  }, []);
 
-  const clearStatus = (id: string) => {
+  const clearStatus = useCallback((id: string) => {
     setStatuses((prev) => {
       const next = { ...prev };
       delete next[id];
       return next;
     });
-  };
+  }, []);
 
-  const setTransientStatus = (
-    id: string,
-    msg: string,
-    kind: StatusKind,
-    ms = 2500,
-  ) => {
-    setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      setStatuses((prev) => {
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
-    }, ms);
-  };
+  const setTransientStatus = useCallback(
+    (id: string, msg: string, kind: StatusKind, ms = 2500) => {
+      setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        setStatuses((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
+      }, ms);
+    },
+    [],
+  );
 
   return { statuses, setStatus, clearStatus, setTransientStatus };
 }
