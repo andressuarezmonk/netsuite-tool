@@ -12,3 +12,16 @@
     text-decoration: none;
   }
 }
+
+.updateBanner {
+  display: block;
+  margin-bottom: 4px;
+  color: $color-mutation;
+  font-size: 11px;
+
+  a {
+    color: $color-mutation;
+    text-decoration: underline;
+    font-weight: 600;
+  }
+}

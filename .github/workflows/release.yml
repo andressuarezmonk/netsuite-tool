@@ -26,13 +26,26 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Bump package.json version and tag the release.
+      # @semantic-release/npm writes the new version into package.json before
+      # the build runs, so the manifest picks up the correct version number.
+      - name: Determine and tag release version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
+
+      # Build after the version bump so dist/manifest.json reflects the new version.
       - name: Build
         run: npm run build
 
       - name: Zip dist
         run: zip -r dist.zip dist/
 
-      - name: Release
+      # Upload dist.zip to the release that semantic-release just created.
+      - name: Attach assets to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          gh release upload "$TAG" dist.zip --clobber

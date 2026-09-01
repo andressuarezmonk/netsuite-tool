@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 import webExtension from 'vite-plugin-web-extension';
 import { resolve } from 'path';
 import { copyFileSync, mkdirSync, readdirSync } from 'fs';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json') as { version: string };
 
 export default defineConfig({
   plugins: [
@@ -11,10 +15,13 @@ export default defineConfig({
       manifest: () => ({
         manifest_version: 3,
         name: 'NetSuite Fast Time Tracker',
-        version: '1.0.0',
+        version: pkg.version,
         description: 'Fast time entry for NetSuite',
         permissions: ['activeTab', 'storage'],
-        host_permissions: ['https://*.netsuite.com/*'],
+        host_permissions: [
+          'https://*.netsuite.com/*',
+          'https://api.github.com/*',
+        ],
         content_scripts: [{
           matches: ['https://*.netsuite.com/app/site/hosting/scriptlet.nl*'],
           js: ['src/index.tsx'],
