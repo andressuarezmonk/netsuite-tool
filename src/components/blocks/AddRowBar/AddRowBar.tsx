@@ -3,20 +3,36 @@ import type { TimeRow, Project, Task } from "@/utils/types";
 import { useStore } from "../../../context/AppContext";
 import { SessionService } from "@/services/session.service";
 import s from "./AddRowBar.module.scss";
+import { weekRangeLabel, addDays, getMondayISO } from "@/utils/dates";
 
 export default function AddRowBar() {
   const {
     catalogStore: { catalog },
-    weekStore: { setWeek },
+    weekStore: { setWeek, week },
+    onCopyPreviousWeek,
   } = useStore();
   const { projects, tasks: allTasks } = catalog;
   const [projId, setProjId] = useState("");
   const [taskId, setTaskId] = useState("");
+  const [copying, setCopying] = useState(false);
 
   const tasks = projId ? (allTasks[projId] ?? []) : [];
   const proj = projects.find((p: Project) => p.id === projId);
   const task = tasks.find((t: Task) => t.id === taskId);
   const canAdd = projId !== "" && taskId !== "";
+
+  const previousWeekLabel = weekRangeLabel(
+    getMondayISO(addDays(week.weekISO, -7)),
+  );
+
+  const handleCopyPreviousWeek = async () => {
+    setCopying(true);
+    try {
+      await onCopyPreviousWeek();
+    } finally {
+      setCopying(false);
+    }
+  };
 
   const addRow = (row: TimeRow) => {
     setWeek((prev) =>
@@ -99,6 +115,17 @@ export default function AddRowBar() {
             }
           >
             + Add row
+          </button>
+
+          <span className={s.divider} />
+
+          <button
+            className={s.copyBtn}
+            onClick={handleCopyPreviousWeek}
+            disabled={copying}
+            title={`Copy all entries from ${previousWeekLabel}`}
+          >
+            {copying ? "Copying…" : "↩ Copy previous week"}
           </button>
         </>
       )}

@@ -4,6 +4,7 @@ import type { CatalogStore } from "./useCatalogStore";
 import type { StatusStore } from "./useStatusStore";
 import type { WeekCacheHandle } from "../hooks/useWeekCache";
 import type { RowMutations } from "../hooks/useRowMutations";
+import type { WeekCopy } from "../hooks/useWeekCopy";
 
 export interface AppStore {
   weekStore: WeekStore;
@@ -12,6 +13,7 @@ export interface AppStore {
   weekCacheHandle: WeekCacheHandle;
   onSave: RowMutations["onSave"];
   onDelete: RowMutations["onDelete"];
+  onCopyPreviousWeek: WeekCopy["onCopyPreviousWeek"];
 }
 
 export const AppContext = createContext<AppStore | null>(null);

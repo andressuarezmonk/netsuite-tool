@@ -1,5 +1,5 @@
 import { useStore } from "../../../context/AppContext";
-import { StatusKind } from "../../../constants/statusKind";
+import { StatusKind, type StatusEntry } from "../../../constants/statusKind";
 import s from "./StatusBar.module.scss";
 
 const KIND_LABEL: Partial<Record<StatusKind, string>> = {
@@ -23,9 +23,16 @@ const SPINNER_KINDS: StatusKind[] = [
   StatusKind.Mutation,
 ];
 
+function byErrorFirst(a: StatusEntry, b: StatusEntry): number {
+  const errorRank = (st: StatusEntry) => (st.kind === StatusKind.Error ? 0 : 1);
+  return errorRank(a) - errorRank(b);
+}
+
 export default function StatusBar() {
   const { statuses } = useStore().statusStore;
-  const visible = Object.values(statuses).filter((st) => st.msg);
+  const visible = Object.values(statuses)
+    .filter((st) => st.msg)
+    .sort(byErrorFirst);
   if (visible.length === 0) return null;
 
   return (

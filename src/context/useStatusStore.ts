@@ -11,13 +11,23 @@ export function useStatusStore() {
     },
   });
 
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Each status id gets its own transient-clear timer so unrelated banners
+  // (e.g. the save error toast and the save progress counter) don't cancel
+  // each other's auto-dismiss.
+  const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(
+    new Map(),
+  );
 
   const setStatus = useCallback((id: string, msg: string, kind: StatusKind) => {
     setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
   }, []);
 
   const clearStatus = useCallback((id: string) => {
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
     setStatuses((prev) => {
       const next = { ...prev };
       delete next[id];
@@ -28,14 +38,19 @@ export function useStatusStore() {
   const setTransientStatus = useCallback(
     (id: string, msg: string, kind: StatusKind, ms = 2500) => {
       setStatuses((prev) => ({ ...prev, [id]: { id, msg, kind } }));
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => {
-        setStatuses((prev) => {
-          const next = { ...prev };
-          delete next[id];
-          return next;
-        });
-      }, ms);
+      const existing = timersRef.current.get(id);
+      if (existing) clearTimeout(existing);
+      timersRef.current.set(
+        id,
+        setTimeout(() => {
+          timersRef.current.delete(id);
+          setStatuses((prev) => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        }, ms),
+      );
     },
     [],
   );
