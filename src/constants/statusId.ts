@@ -8,4 +8,5 @@ export enum StatusId {
   Cache = "cache",
   Fetch = "fetch",
   Mutation = "mutation",
+  MutationError = "mutationError",
 }

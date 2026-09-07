@@ -41,6 +41,56 @@ async function waitForPendingSave(
   }
 }
 
+async function refreshWeekFromServer(
+  weekISO: string,
+  userId: string,
+  defaultItemId: string,
+): Promise<WeekData> {
+  const { weekData: fresh } = await loadWeek(weekISO, userId, defaultItemId);
+  await CacheService.setCached(weekISO, fresh);
+  return fresh;
+}
+
+// Tracks the current batch of concurrent onSave calls so the status bar can
+// show live "completed/total" progress. A batch starts with the first save
+// after the previous one fully settled, and resets to zero once every save
+// in it has completed (success or failure).
+interface SaveBatch {
+  total: number;
+  completed: number;
+  errors: number;
+}
+
+function createSaveBatchTracker() {
+  let batch: SaveBatch = { total: 0, completed: 0, errors: 0 };
+
+  function start(): SaveBatch {
+    if (batch.total === batch.completed) {
+      batch = { total: 0, completed: 0, errors: 0 };
+    }
+    batch.total += 1;
+    return batch;
+  }
+
+  function finish(didError: boolean): SaveBatch {
+    batch.completed += 1;
+    if (didError) batch.errors += 1;
+    return batch;
+  }
+
+  return { start, finish };
+}
+
+function formatSaveProgressMessage(batch: SaveBatch): string {
+  return batch.total > 1
+    ? `Saving… ${batch.completed}/${batch.total}`
+    : "Saving…";
+}
+
+function formatSaveErrorMessage(errorCount: number): string {
+  return errorCount > 1 ? `Save failed (${errorCount})` : "Save failed";
+}
+
 interface UseRowMutations {
   weekStore: WeekStore;
   statusStore: StatusStore;
@@ -64,8 +114,9 @@ export function useRowMutations({
 }: UseRowMutations): RowMutations {
   const { setWeek, currentWeekDataRef, localEditsRef, pendingSavesRef } =
     weekStore;
-  const { setStatus, setTransientStatus } = statusStore;
+  const { setStatus, clearStatus, setTransientStatus } = statusStore;
   const { userId, defaultItemId } = SessionService.get();
+
   const setWeekData = useCallback(
     (
       weekDataOrUpdater:
@@ -81,10 +132,48 @@ export function useRowMutations({
     },
     [setWeek],
   );
+
+  // Merges freshly-fetched week data with any edits the user made while the
+  // fetch was in flight, so a slow refresh can't clobber unsaved keystrokes.
+  const mergeFreshWeekData = useCallback(
+    (fresh: WeekData) => {
+      setWeekData(
+        mergeWeekData(
+          currentWeekDataRef.current ?? fresh,
+          fresh,
+          localEditsRef.current,
+        ),
+      );
+    },
+    [setWeekData, currentWeekDataRef, localEditsRef],
+  );
+
   // Per-cell debounce timers: "rowKey_dayKey" → timer handle
   const { debounce, cancelByPrefix } = useRef(
     createKeyedAsyncDebounce(),
   ).current;
+  // Tracks the current batch of concurrent onSave calls for progress display
+  const saveBatch = useRef(createSaveBatchTracker()).current;
+
+  const reportSaveBatchStatus = useCallback(
+    (batch: SaveBatch) => {
+      if (batch.completed < batch.total) {
+        setStatus(
+          StatusId.Mutation,
+          formatSaveProgressMessage(batch),
+          StatusKind.Mutation,
+        );
+        return;
+      }
+      // Batch fully settled — only flash success if nothing in it failed
+      if (batch.errors === 0) {
+        setTransientStatus(StatusId.Mutation, "✓ Saved", StatusKind.Success);
+      } else {
+        clearStatus(StatusId.Mutation);
+      }
+    },
+    [setStatus, setTransientStatus, clearStatus],
+  );
 
   const onSave = useCallback(
     async (row: TimeRow, dayKey: DayKey, hours: number, memo: string) => {
@@ -95,7 +184,12 @@ export function useRowMutations({
       if (hours > 0) localEditsRef.current.set(editKey, hours);
       else localEditsRef.current.delete(editKey);
 
-      setStatus(StatusId.Mutation, "Saving…", StatusKind.Mutation);
+      const startedBatch = saveBatch.start();
+      setStatus(
+        StatusId.Mutation,
+        formatSaveProgressMessage(startedBatch),
+        StatusKind.Mutation,
+      );
 
       const savePromise = debounce(cellKey, 400, async () => {
         await RowService.saveRow(
@@ -114,20 +208,9 @@ export function useRowMutations({
           defaultItemId,
         );
         localEditsRef.current.delete(editKey);
-        const { weekData: fresh } = await loadWeek(
-          weekISO,
-          userId,
-          defaultItemId,
+        mergeFreshWeekData(
+          await refreshWeekFromServer(weekISO, userId, defaultItemId),
         );
-        await CacheService.setCached(weekISO, fresh);
-        setWeekData(
-          mergeWeekData(
-            currentWeekDataRef.current ?? fresh,
-            fresh,
-            localEditsRef.current,
-          ),
-        );
-        setTransientStatus(StatusId.Mutation, "✓ Saved", StatusKind.Success);
       });
 
       // Register so any delete on this row waits for us to finish
@@ -135,13 +218,16 @@ export function useRowMutations({
 
       try {
         await savePromise;
+        reportSaveBatchStatus(saveBatch.finish(false));
       } catch (err) {
         localEditsRef.current.delete(editKey);
+        const finishedBatch = saveBatch.finish(true);
         setTransientStatus(
-          StatusId.Mutation,
-          `Save failed: ${(err as Error).message}`,
+          StatusId.MutationError,
+          formatSaveErrorMessage(finishedBatch.errors),
           StatusKind.Error,
         );
+        reportSaveBatchStatus(finishedBatch);
         throw err;
       }
     },
@@ -149,13 +235,14 @@ export function useRowMutations({
       weekISO,
       setStatus,
       setTransientStatus,
-      setWeekData,
-      currentWeekDataRef,
+      mergeFreshWeekData,
+      reportSaveBatchStatus,
       localEditsRef,
       userId,
       defaultItemId,
       debounce,
       pendingSavesRef,
+      saveBatch,
     ],
   );
 
@@ -184,31 +271,17 @@ export function useRowMutations({
           "✓ Row deleted",
           StatusKind.Success,
         );
-        const { weekData: fresh } = await loadWeek(
-          weekISO,
-          userId,
-          defaultItemId,
+        setWeekData(
+          await refreshWeekFromServer(weekISO, userId, defaultItemId),
         );
-        await CacheService.setCached(weekISO, fresh);
-        setWeekData(fresh);
       } catch (err) {
         setTransientStatus(
           StatusId.Mutation,
           `Delete failed: ${(err as Error).message}`,
           StatusKind.Error,
         );
-        const { weekData: fresh } = await loadWeek(
-          weekISO,
-          userId,
-          defaultItemId,
-        );
-        await CacheService.setCached(weekISO, fresh);
-        setWeekData(
-          mergeWeekData(
-            currentWeekDataRef.current ?? fresh,
-            fresh,
-            localEditsRef.current,
-          ),
+        mergeFreshWeekData(
+          await refreshWeekFromServer(weekISO, userId, defaultItemId),
         );
       }
     },
@@ -221,7 +294,7 @@ export function useRowMutations({
       setTransientStatus,
       userId,
       defaultItemId,
-      localEditsRef,
+      mergeFreshWeekData,
       pendingSavesRef,
     ],
   );
