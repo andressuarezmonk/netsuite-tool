@@ -260,7 +260,11 @@ export function useRowMutations({
       try {
         // Optimistically remove the row from UI while the delete is in flight
         setWeekData({
-          ...(currentWeekDataRef.current ?? { rows: [], weekStart: weekISO }),
+          ...(currentWeekDataRef.current ?? {
+            rows: [],
+            weekStart: weekISO,
+            holidays: {},
+          }),
           rows: (currentWeekDataRef.current?.rows ?? []).filter(
             (r) => r.rowKey !== row.rowKey,
           ),

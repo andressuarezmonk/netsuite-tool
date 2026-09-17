@@ -1,4 +1,4 @@
-import { DAYS } from "@/utils/constants";
+import { DAYS, type DayKey } from "@/utils/constants";
 import { formatHours } from "@/utils/dates";
 import gs from "../WeekGrid/WeekGrid.module.scss"; // shared grid column classes
 import s from "./DayTotals.module.scss";
@@ -8,9 +8,15 @@ export interface TotalsProps {
   rows: TimeRow[];
   dayDates: string[];
   today: string;
+  holidays: Partial<Record<DayKey, string>>;
 }
 
-export default function DayTotals({ rows, dayDates, today }: TotalsProps) {
+export default function DayTotals({
+  rows,
+  dayDates,
+  today,
+  holidays,
+}: TotalsProps) {
   // A day has entries if at least one row has a DayEntry object for it
   const dayHasEntries = (dk: (typeof DAYS)[number]) =>
     rows.some((r) => r.days[dk] !== undefined);
@@ -36,7 +42,7 @@ export default function DayTotals({ rows, dayDates, today }: TotalsProps) {
         return (
           <td
             key={dk}
-            className={`${gs.colDay}${dayDates[i] === today ? ` ${s.today}` : ""}`}
+            className={`${gs.colDay}${dayDates[i] === today ? ` ${s.today}` : ""}${holidays[dk] ? ` ${s.holiday}` : ""}`}
           >
             {hasEntries ? formatHours(total) : ""}
           </td>

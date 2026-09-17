@@ -5,10 +5,12 @@ import {
   dayIndexFromMonday,
   dayKeyFromIndex,
   nsToHours,
+  holidayKeyToApiDate,
 } from "../utils/dates";
 import { NSApprovalStatus, NSSubmittedStatus } from "../constants/nsEnums";
 import { FetchService, type NSWeekResponse } from "./fetch.service";
 import type { Project, Task, TimeRow, WeekData } from "../utils/types";
+import type { DayKey } from "../utils/constants";
 
 const DATE_SHIFT = 1;
 
@@ -141,5 +143,25 @@ export async function loadWeek(
     (r) => Object.keys(r.days).length > 0,
   );
 
-  return { weekData: { rows, weekStart: mondayISO }, projects, tasks };
+  // Holiday calendar is company-wide, not week-scoped, so any one of the
+  // three fetches carries the full list — just keep the days that fall in
+  // the displayed Mon–Sun window.
+  const holidays: Partial<Record<DayKey, string>> = {};
+  for (const entry of data.holidays ?? []) {
+    for (const [dateKey, holidayName] of Object.entries(entry)) {
+      const nsDate = holidayKeyToApiDate(dateKey);
+      if (!nsDate) continue;
+      const iso = fromApiDate(nsDate, DATE_SHIFT);
+      const diff = dayIndexFromMonday(iso, mondayISO);
+      if (diff < 0 || diff >= 7) continue;
+      const dk = dayKeyFromIndex(diff);
+      if (dk) holidays[dk] = holidayName;
+    }
+  }
+
+  return {
+    weekData: { rows, weekStart: mondayISO, holidays },
+    projects,
+    tasks,
+  };
 }

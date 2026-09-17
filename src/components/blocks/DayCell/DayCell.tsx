@@ -9,9 +9,10 @@ interface Props {
   row: TimeRow;
   dayKey: DayKey;
   isToday: boolean;
+  isHoliday: boolean;
 }
 
-export default function DayCell({ row, dayKey, isToday }: Props) {
+export default function DayCell({ row, dayKey, isToday, isHoliday }: Props) {
   const { onSave } = useStore();
   const entry = row.days[dayKey];
   const [value, setValue] = useState(
@@ -61,7 +62,9 @@ export default function DayCell({ row, dayKey, isToday }: Props) {
     }
   };
 
-  const cellClass = [s.cell, isToday ? s.today : ""].filter(Boolean).join(" ");
+  const cellClass = [s.cell, isToday ? s.today : "", isHoliday ? s.holiday : ""]
+    .filter(Boolean)
+    .join(" ");
 
   const inputClass = [
     s.input,
