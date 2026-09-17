@@ -15,6 +15,8 @@ export default function WeekGrid() {
 
   if (!weekData) return null;
 
+  const holidays = weekData.holidays;
+
   return (
     <div className={styles.wrap}>
       <table className={styles.table}>
@@ -22,17 +24,24 @@ export default function WeekGrid() {
           <tr>
             <th className={styles.colProj}>Project</th>
             <th className={styles.colTask}>Task</th>
-            {DAYS.map((_, i) => (
-              <th
-                key={DAYS[i]}
-                className={`${styles.colDay}${dayDates[i] === today ? ` ${styles.today}` : ""}`}
-              >
-                {DAY_LABELS[i]}
-                <span className={styles.dayDate}>
-                  {isoDayMonthDisplay(dayDates[i])}
-                </span>
-              </th>
-            ))}
+            {DAYS.map((dk, i) => {
+              const holidayName = holidays[dk];
+              return (
+                <th
+                  key={dk}
+                  className={`${styles.colDay}${dayDates[i] === today ? ` ${styles.today}` : ""}${holidayName ? ` ${styles.holiday}` : ""}`}
+                  title={holidayName}
+                >
+                  {DAY_LABELS[i]}
+                  <span className={styles.dayDate}>
+                    {isoDayMonthDisplay(dayDates[i])}
+                  </span>
+                  {holidayName && (
+                    <span className={styles.holidayName}>{holidayName}</span>
+                  )}
+                </th>
+              );
+            })}
             <th className={styles.colTotal}>Total</th>
             <th className={styles.colDel} />
           </tr>
@@ -51,12 +60,18 @@ export default function WeekGrid() {
                 row={row}
                 dayDates={dayDates}
                 today={today}
+                holidays={holidays}
               />
             ))
           )}
         </tbody>
         <tfoot>
-          <DayTotals rows={weekData.rows} dayDates={dayDates} today={today} />
+          <DayTotals
+            rows={weekData.rows}
+            dayDates={dayDates}
+            today={today}
+            holidays={holidays}
+          />
         </tfoot>
       </table>
     </div>

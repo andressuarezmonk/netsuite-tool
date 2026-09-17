@@ -66,6 +66,36 @@ export function weekRangeLabel(mondayISO: string): string {
   return `${formatDate(monday)} – ${formatDate(sunday)}, ${monday.getFullYear()}`;
 }
 
+const HOLIDAY_MONTH_ABBREVIATIONS: Record<string, number> = {
+  Jan: 1,
+  Feb: 2,
+  Mar: 3,
+  Apr: 4,
+  May: 5,
+  Jun: 6,
+  Jul: 7,
+  Aug: 8,
+  Sep: 9,
+  Oct: 10,
+  Nov: 11,
+  Dec: 12,
+};
+
+/**
+ * Parses a JS `Date.toString()`-style key from the NS holidays response
+ * (e.g. "Sat Jan 01 2022 00:00:00 GMT-0800 (PST)") into "M/D/YYYY", reading
+ * the calendar date literally as authored so it can go through the same
+ * `fromApiDate` shift used for time entry dates.
+ */
+export function holidayKeyToApiDate(dateKey: string): string | null {
+  const match = dateKey.match(/^\w+ (\w+) (\d+) (\d+)/);
+  if (!match) return null;
+  const [, monthAbbreviation, day, year] = match;
+  const month = HOLIDAY_MONTH_ABBREVIATIONS[monthAbbreviation];
+  if (!month) return null;
+  return `${month}/${parseInt(day, 10)}/${year}`;
+}
+
 /** Build an API date string shifted by -shift days to compensate for server timezone */
 export function toApiDate(isoDate: string, timezoneShiftDays: number): string {
   const date = new Date(isoDate + "T12:00:00");

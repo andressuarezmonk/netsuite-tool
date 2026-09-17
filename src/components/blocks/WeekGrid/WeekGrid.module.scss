@@ -71,6 +71,20 @@
 .today {
   background: #fffbe6 !important;
 }
+.holiday {
+  background: $bg-holiday !important;
+}
+.holidayName {
+  display: block;
+  font-weight: 600;
+  font-size: 9px;
+  color: $color-holiday;
+  text-transform: none;
+  letter-spacing: 0;
+  white-space: normal;
+  max-width: 70px;
+  margin: 2px auto 0;
+}
 .emptyRow {
   text-align: center;
   padding: 24px !important;

@@ -33,6 +33,9 @@ export interface NSWeekResponse {
   // keyed as "projId_taskId_itemId", each value is an array of
   // objects keyed by NS date string ("M/D/YYYY") → time entry
   timeentries: Record<string, Array<Record<string, NSRawTimeEntry>>>;
+  // company-wide holiday calendar, not scoped to the requested week —
+  // each entry is keyed by a JS Date.toString()-style date → holiday name
+  holidays: Array<Record<string, string>>;
 }
 
 // ── Requests ──────────────────────────────────────────────────────────────────

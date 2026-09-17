@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { DAYS } from "@/utils/constants";
+import { DAYS, type DayKey } from "@/utils/constants";
 import { formatHours } from "@/utils/dates";
 import type { TimeRow as TimeRowType } from "@/utils/types";
 import DayCell from "../DayCell/DayCell";
@@ -11,9 +11,10 @@ interface Props {
   row: TimeRowType;
   dayDates: string[];
   today: string;
+  holidays: Partial<Record<DayKey, string>>;
 }
 
-export default function TimeRow({ row, dayDates, today }: Props) {
+export default function TimeRow({ row, dayDates, today, holidays }: Props) {
   const { onDelete } = useStore();
   const rowTotal = DAYS.reduce(
     (sum, dk) => sum + (row.days[dk]?.hours ?? 0),
@@ -52,6 +53,7 @@ export default function TimeRow({ row, dayDates, today }: Props) {
           row={row}
           dayKey={dk}
           isToday={dayDates[i] === today}
+          isHoliday={Boolean(holidays[dk])}
         />
       ))}
       <td className={gs.tdTotal}>{rowHasEntry ? formatHours(rowTotal) : ""}</td>

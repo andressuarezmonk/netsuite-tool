@@ -135,7 +135,11 @@ export function useWeekCopy({
     // Optimistically clear the week in the UI while saves are in progress
     setWeek((prev) => ({
       ...prev,
-      weekData: { rows: [], weekStart: weekISO },
+      weekData: {
+        rows: [],
+        weekStart: weekISO,
+        holidays: currentWeekDataRef.current?.holidays ?? {},
+      },
     }));
 
     // ── Step 4: Save each copyable row / day sequentially ─────────────────────

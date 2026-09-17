@@ -133,6 +133,39 @@ The extension manifest version is read directly from `package.json` at build tim
 
 The extension checks `api.github.com` for a newer `tag_name` on each page load and shows a footer banner when one is found.
 
+### Merging `develop` into `master`
+
+Day-to-day work happens on `develop`; `master` only moves forward when it's time to cut a release. Merge with a **squash merge**, not a regular merge — the individual commits on `develop` don't need to survive on `master`.
+
+The important part: `semantic-release`'s commit analyzer only sees whatever commit(s) land on `master`. A squash merge collapses everything from `develop` into **one** commit, so that commit's header is the *only* thing that decides the release type — the original `feat:`/`fix:`/`task:`/`refac:` commits on `develop` are irrelevant once squashed. Pick the header deliberately:
+
+- `feat: ...` → minor bump (use this if any feature shipped in the batch)
+- `fix: ...` → patch bump
+- a `BREAKING CHANGE:` footer → major bump, regardless of type
+- anything else (`chore:`, `refactor:`, `docs:`, `task:`, `style:`, `test:`, `build:`, `ci:`) → **no release at all**
+
+```bash
+git fetch origin
+git checkout master
+git pull origin master
+
+# Stage develop's changes as one squashed changeset (does not commit)
+git merge --squash develop
+
+# The header here is what semantic-release reads — choose the type that
+# reflects the highest-impact change in the batch
+git commit -m "feat: <summary of what shipped>"
+
+git push origin master
+```
+
+Pushing to `master` triggers the release workflow described above, which also merges `master` back into `develop` automatically so version bump commits don't get lost. Pull `develop` again afterward to pick that up locally:
+
+```bash
+git checkout develop
+git pull origin develop
+```
+
 ## Architecture
 
 State is managed with three grouped `useState` calls in `useStore` — `week`, `catalog`, and `statuses` — exposed through a single React context (`AppContext`). Components read from the store via `useStore()`.

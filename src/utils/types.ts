@@ -24,6 +24,7 @@ export interface TimeRow {
 export interface WeekData {
   rows: TimeRow[];
   weekStart: string; // ISO monday
+  holidays: Partial<Record<DayKey, string>>; // dayKey -> holiday name
 }
 
 export interface Project {
