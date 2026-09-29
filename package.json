@@ -10,6 +10,7 @@
     "lint:fix": "eslint src --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,scss,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,scss,json}\"",
+    "deploy": "bash scripts/deploy.sh",
     "prepare": "husky"
   },
   "lint-staged": {
