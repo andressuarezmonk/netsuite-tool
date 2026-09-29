@@ -83,9 +83,9 @@ const HOLIDAY_MONTH_ABBREVIATIONS: Record<string, number> = {
 
 /**
  * Parses a JS `Date.toString()`-style key from the NS holidays response
- * (e.g. "Sat Jan 01 2022 00:00:00 GMT-0800 (PST)") into "M/D/YYYY", reading
- * the calendar date literally as authored so it can go through the same
- * `fromApiDate` shift used for time entry dates.
+ * (e.g. "Mon Oct 12 2026 00:00:00 GMT-0700 (PDT)") into "M/D/YYYY".
+ * The calendar date is read literally — no timezone shift should be applied
+ * to the result, since the key already encodes the correct local date.
  */
 export function holidayKeyToApiDate(dateKey: string): string | null {
   const match = dateKey.match(/^\w+ (\w+) (\d+) (\d+)/);
