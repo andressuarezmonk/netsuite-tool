@@ -192,6 +192,35 @@ export function useRowMutations({
       );
 
       const savePromise = debounce(cellKey, 400, async () => {
+        // If timeid is empty the row may already exist in NS but not yet be
+        // reflected in local state — e.g. the cache is stale, or the row was
+        // added via AddRowBar while a background refresh was still in flight.
+        // Do a pre-flight fetch to discover the real timeid so NS performs an
+        // UPDATE instead of creating a duplicate record.
+        let timeid = row.days[dayKey]?.timeid ?? "";
+        if (!timeid) {
+          const preflightWeekData = await refreshWeekFromServer(
+            weekISO,
+            userId,
+            defaultItemId,
+          );
+          // Loop through all rows that match this project+task — NS may still
+          // have entries split across separate row blocks before the merge in
+          // week.service.ts has a chance to collapse them.
+          for (const candidateRow of preflightWeekData.rows) {
+            if (
+              candidateRow.projId === row.projId &&
+              candidateRow.taskId === row.taskId
+            ) {
+              const candidateTimeid = candidateRow.days[dayKey]?.timeid;
+              if (candidateTimeid) {
+                timeid = candidateTimeid;
+                break;
+              }
+            }
+          }
+        }
+
         await RowService.saveRow(
           {
             projRaw: row.projRaw,
@@ -202,7 +231,7 @@ export function useRowMutations({
             dayKey,
             hours,
             memo,
-            timeid: row.days[dayKey]?.timeid ?? "",
+            timeid,
           },
           userId,
           defaultItemId,
