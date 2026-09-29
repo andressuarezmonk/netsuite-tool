@@ -15,7 +15,7 @@ export default function WeekGrid() {
 
   if (!weekData) return null;
 
-  const holidays = weekData.holidays;
+  const holidays = weekData.holidays ?? {};
 
   return (
     <div className={styles.wrap}>

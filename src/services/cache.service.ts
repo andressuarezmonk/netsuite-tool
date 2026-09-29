@@ -23,6 +23,11 @@ const buildStorageKey = (mondayISO: string) => STORAGE_KEY_PREFIX + mondayISO;
 const isExpired = (entry: WeekCacheEntry) =>
   Date.now() - entry.cachedAtTimestamp > MAX_CACHE_AGE_MS;
 
+const normalizeWeekData = (weekData: WeekData): WeekData => ({
+  ...weekData,
+  holidays: weekData.holidays ?? {},
+});
+
 const getCached = async (mondayISO: string): Promise<WeekData | null> => {
   const storageKey = buildStorageKey(mondayISO);
   const storageResult = await ChromeStorage.storageGet(storageKey);
@@ -35,7 +40,7 @@ const getCached = async (mondayISO: string): Promise<WeekData | null> => {
     return null;
   }
 
-  return cachedEntry.weekData;
+  return normalizeWeekData(cachedEntry.weekData);
 };
 
 async function setCached(mondayISO: string, weekData: WeekData): Promise<void> {
