@@ -169,7 +169,8 @@ export async function loadWeek(
     for (const [dateKey, holidayName] of Object.entries(entry)) {
       const nsDate = holidayKeyToApiDate(dateKey);
       if (!nsDate) continue;
-      const iso = fromApiDate(nsDate, DATE_SHIFT);
+
+      const iso = fromApiDate(nsDate, 0);
       const diff = dayIndexFromMonday(iso, mondayISO);
       if (diff < 0 || diff >= 7) continue;
       const dk = dayKeyFromIndex(diff);
