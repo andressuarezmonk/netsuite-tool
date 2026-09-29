@@ -115,11 +115,11 @@ export async function loadWeek(
       }
     }
 
-    // Use the full API key as the unique row identifier — same project+task
-    // can appear multiple times (e.g. users duplicate rows to work around
-    // approved entries). Only deduplicate when the EXACT same key appears
-    // in multiple fetches (primary / overlap / next-week), keeping the
-    // version with the most valid day entries.
+    // Use the full API key as the unique row identifier. The same key can
+    // appear in multiple fetches (primary / overlap / next-week) — keep only
+    // the version with the most day entries. Rows that share the same
+    // proj+task+item but carry a different block suffix are collapsed in the
+    // secondary merge pass below.
     const existing = rowMap.get(key);
     if (
       !existing ||
@@ -139,7 +139,25 @@ export async function loadWeek(
     }
   }
 
-  const rows = [...rowMap.values()].filter(
+  // Secondary merge: collapse rows that share the same proj+task+item but
+  // differ only in their NS block suffix. NS assigns separate row blocks when
+  // some entries are approved and new ones are added to the same project+task —
+  // e.g. an approved Mon–Thu block and a new Fri block come back as two distinct
+  // timeentries keys. Merge them so the extension shows one logical row with the
+  // correct timeid for every day.
+  const collapsedByProjTaskItem = new Map<string, TimeRow>();
+  for (const row of rowMap.values()) {
+    const groupKey = `${row.projId}_${row.taskId}_${row.itemId}`;
+    const existing = collapsedByProjTaskItem.get(groupKey);
+    if (!existing) {
+      collapsedByProjTaskItem.set(groupKey, row);
+    } else {
+      const mergedDays: TimeRow["days"] = { ...row.days, ...existing.days };
+      collapsedByProjTaskItem.set(groupKey, { ...existing, days: mergedDays });
+    }
+  }
+
+  const rows = [...collapsedByProjTaskItem.values()].filter(
     (r) => Object.keys(r.days).length > 0,
   );
 
