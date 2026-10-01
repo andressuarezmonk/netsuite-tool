@@ -52,16 +52,18 @@ export function useWeekCopy({
       return;
     }
 
-    // Copy all cells with hours > 0, regardless of approval or submission
-    // status — we are creating fresh unapproved records in the current week.
-    // The only cells we skip are `disabled` ones, which are locked at the NS
-    // level and would fail on save.
+    // Copy every cell that exists as a saved NS record, regardless of approval
+    // or submission status — we are creating fresh unapproved records in the
+    // current week. A record with 0 hours is an explicit zero the user entered
+    // (a never-touched cell has no record at all), so it is copied too. The
+    // only cells we skip are `disabled` ones, which are locked at the NS level
+    // and would fail on save.
     const copyableRows = previousRows
       .map((row) => ({
         ...row,
         days: Object.fromEntries(
           Object.entries(row.days).filter(
-            ([, entry]) => entry.hours > 0 && !entry.disabled,
+            ([, entry]) => entry.timeid !== "" && !entry.disabled,
           ),
         ) as typeof row.days,
       }))
