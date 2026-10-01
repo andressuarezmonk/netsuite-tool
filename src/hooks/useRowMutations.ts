@@ -181,8 +181,8 @@ export function useRowMutations({
       const editKey = `${row.projId}_${row.taskId}_${dayKey}`;
 
       // Track local edit immediately so background refreshes don't overwrite it
-      if (hours > 0) localEditsRef.current.set(editKey, hours);
-      else localEditsRef.current.delete(editKey);
+      // (including explicit zeros, which are real records, not "no edit")
+      localEditsRef.current.set(editKey, hours);
 
       const startedBatch = saveBatch.start();
       setStatus(
