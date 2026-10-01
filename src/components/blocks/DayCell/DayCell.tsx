@@ -70,7 +70,7 @@ export default function DayCell({ row, dayKey, isToday, isHoliday }: Props) {
     s.input,
     entry?.approved ? s.inputApproved : "",
     entry?.submitted ? s.inputSubmitted : "",
-    !disabled && entry?.hours !== undefined ? s.inputHasValue : "",
+    !disabled && !saving && entry?.hours !== undefined ? s.inputHasValue : "",
     saving ? s.inputSaving : "",
   ]
     .filter(Boolean)
