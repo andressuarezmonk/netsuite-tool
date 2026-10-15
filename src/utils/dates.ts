@@ -1,12 +1,16 @@
-import { DAYS, type DayKey } from "./constants";
+import { DAYS, type DayKey } from "./days";
 
 export function pad(n: number): string {
   return String(n).padStart(2, "0");
 }
 
+/** Local calendar date of a Date as "YYYY-MM-DD". */
+export function dateToISO(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export function todayISO(): string {
-  const today = new Date();
-  return `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  return dateToISO(new Date());
 }
 
 export function addDays(isoDate: string, numberOfDays: number): string {

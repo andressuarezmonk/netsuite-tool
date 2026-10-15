@@ -1,5 +1,6 @@
 import { DAYS, type DayKey } from "@/utils/constants";
 import { formatHours } from "@/utils/dates";
+import { getDayTargetStatus, getDayTotal, getWeekTotal } from "@/utils/target";
 import gs from "../WeekGrid/WeekGrid.module.scss"; // shared grid column classes
 import s from "./DayTotals.module.scss";
 import type { TimeRow } from "@/utils/types";
@@ -9,6 +10,7 @@ export interface TotalsProps {
   dayDates: string[];
   today: string;
   holidays: Partial<Record<DayKey, string>>;
+  dailyTarget: number;
 }
 
 export default function DayTotals({
@@ -16,17 +18,15 @@ export default function DayTotals({
   dayDates,
   today,
   holidays,
+  dailyTarget,
 }: TotalsProps) {
   // A day has entries if at least one row has a DayEntry object for it
-  const dayHasEntries = (dk: (typeof DAYS)[number]) =>
+  const dayHasEntries = (dk: DayKey) =>
     rows.some((r) => r.days[dk] !== undefined);
 
   const hasAnyEntry = DAYS.some(dayHasEntries);
 
-  const grandTotal = DAYS.reduce(
-    (sum, dk) => sum + rows.reduce((rs, r) => rs + (r.days[dk]?.hours ?? 0), 0),
-    0,
-  );
+  const grandTotal = getWeekTotal(rows);
 
   return (
     <tr>
@@ -34,17 +34,33 @@ export default function DayTotals({
         Week total
       </td>
       {DAYS.map((dk, i) => {
-        const total = rows.reduce(
-          (sum, r) => sum + (r.days[dk]?.hours ?? 0),
-          0,
-        );
+        const total = getDayTotal(rows, dk);
         const hasEntries = dayHasEntries(dk);
+        const targetStatus = getDayTargetStatus({
+          dayKey: dk,
+          dayDate: dayDates[i],
+          today,
+          total,
+          dailyTarget,
+        });
+        const classNames = [
+          gs.colDay,
+          dayDates[i] === today ? s.today : "",
+          holidays[dk] ? s.holiday : "",
+          targetStatus === "under" ? s.under : "",
+          targetStatus === "over" ? s.over : "",
+        ].filter(Boolean);
         return (
           <td
             key={dk}
-            className={`${gs.colDay}${dayDates[i] === today ? ` ${s.today}` : ""}${holidays[dk] ? ` ${s.holiday}` : ""}`}
+            className={classNames.join(" ")}
+            title={
+              targetStatus
+                ? `${targetStatus === "under" ? "Under" : "Over"} the daily target of ${formatHours(dailyTarget)}h`
+                : undefined
+            }
           >
-            {hasEntries ? formatHours(total) : ""}
+            {hasEntries || targetStatus === "under" ? formatHours(total) : ""}
           </td>
         );
       })}
