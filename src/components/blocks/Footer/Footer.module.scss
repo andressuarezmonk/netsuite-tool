@@ -13,6 +13,26 @@
   }
 }
 
+.themeToggle {
+  background: none;
+  border: 1px solid $border-input;
+  border-radius: $radius;
+  padding: 1px 8px;
+  margin-right: 10px;
+  font-family: inherit;
+  font-size: 11px;
+  color: $text-muted;
+  cursor: pointer;
+  transition:
+    border-color $t,
+    color $t;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+}
+
 .version {
   color: $text-light;
   margin-right: 8px;

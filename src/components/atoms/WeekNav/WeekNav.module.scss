@@ -10,12 +10,12 @@
 
   button {
     background: none;
-    border: 1.5px solid #ccc;
+    border: 1.5px solid $border-control;
     border-radius: $radius;
     padding: 5px 12px;
     cursor: pointer;
     font-size: 13px;
-    color: #444;
+    color: $text-control;
     white-space: nowrap;
     transition:
       border-color $t,
@@ -83,7 +83,7 @@
   padding: 5px 12px;
   border: 1.5px solid transparent;
   border-radius: $radius;
-  color: #444;
+  color: $text-control;
   pointer-events: none;
   transition:
     border-color $t,
@@ -95,7 +95,7 @@
 .labelWrap:hover .labelText {
   border-color: $primary;
   color: $primary;
-  background: rgba($primary, 0.05);
+  background: $primary-tint;
 }
 
 .calIcon {

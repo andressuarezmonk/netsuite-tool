@@ -1,0 +1,105 @@
+// ── Theme palettes ───────────────────────────────────────────────────────────
+// Values for the CSS custom properties referenced by _variables.scss.
+// The active palette is selected by the `data-ft-theme` attribute that
+// ThemeService sets on <html>. Light is the default when no attribute is set.
+
+:root,
+:root[data-ft-theme="light"] {
+  color-scheme: light;
+
+  --ft-page-bg: #eef0f8;
+  --ft-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.09);
+
+  --ft-primary: #0066cc;
+  --ft-primary-dark: #0055aa;
+  --ft-primary-tint: rgba(0, 102, 204, 0.05);
+
+  --ft-surface: white;
+  --ft-surface-muted: #f8f9fc;
+  --ft-border: #edf0f7;
+  --ft-border-input: #dde1e9;
+  --ft-border-row: #f0f2f8;
+  --ft-row-hover: #fafbff;
+  --ft-bg-today: #fffbe6;
+  --ft-bg-has-value: #f0f6ff;
+
+  --ft-text: #1a1a2e;
+  --ft-text-strong: #333;
+  --ft-text-secondary: #555;
+  --ft-text-muted: #888;
+  --ft-text-light: #bbb;
+  --ft-text-faint: #aaa;
+
+  --ft-border-control: #ccc;
+  --ft-text-control: #444;
+
+  --ft-color-cache: #6d28d9;
+  --ft-bg-cache: #f3eefe;
+  --ft-color-fetch: #1a73e8;
+  --ft-bg-fetch: #e8f0fe;
+  --ft-color-mutation: #e65100;
+  --ft-bg-mutation: #fff3e0;
+  --ft-color-success: #1e7e34;
+  --ft-bg-success: #e6f4ea;
+  --ft-color-error: #c0392b;
+  --ft-bg-error: #fdecea;
+
+  --ft-color-approved: #1e7e34;
+  --ft-bg-approved: #e6f4ea;
+  --ft-border-approved: #b7dfc0;
+  --ft-color-submitted: #1a73e8;
+  --ft-bg-submitted: #e8f0fe;
+  --ft-border-submitted: #9ab8e8;
+  --ft-color-holiday: #c0392b;
+  --ft-bg-holiday: #fdf0ee;
+}
+
+:root[data-ft-theme="dark"] {
+  color-scheme: dark;
+
+  --ft-page-bg: #0f111a;
+  --ft-shadow-card: 0 4px 24px rgba(0, 0, 0, 0.5);
+
+  --ft-primary: #4393e6;
+  --ft-primary-dark: #2f7fd1;
+  --ft-primary-tint: rgba(67, 147, 230, 0.12);
+
+  --ft-surface: #1b1e2b;
+  --ft-surface-muted: #222638;
+  --ft-border: #2c3146;
+  --ft-border-input: #3a405a;
+  --ft-border-row: #262b3e;
+  --ft-row-hover: #20243a;
+  --ft-bg-today: #3a3516;
+  --ft-bg-has-value: #1f2d4a;
+
+  --ft-text: #e6e8f2;
+  --ft-text-strong: #e0e3ee;
+  --ft-text-secondary: #b4b9cc;
+  --ft-text-muted: #9097ad;
+  --ft-text-light: #6c7390;
+  --ft-text-faint: #7a819b;
+
+  --ft-border-control: #444b66;
+  --ft-text-control: #c8ccdc;
+
+  --ft-color-cache: #b79bf5;
+  --ft-bg-cache: #2a2145;
+  --ft-color-fetch: #7ab1ff;
+  --ft-bg-fetch: #1c2a47;
+  --ft-color-mutation: #ff9a57;
+  --ft-bg-mutation: #3a2814;
+  --ft-color-success: #5fd07a;
+  --ft-bg-success: #1b3325;
+  --ft-color-error: #ff7a6b;
+  --ft-bg-error: #3d2220;
+
+  --ft-color-approved: #5fd07a;
+  --ft-bg-approved: #1b3325;
+  --ft-border-approved: #2f5c3d;
+  --ft-color-submitted: #7ab1ff;
+  --ft-bg-submitted: #1c2a47;
+  --ft-border-submitted: #3a5a94;
+  --ft-color-holiday: #ff7a6b;
+  --ft-bg-holiday: #3a2323;
+}

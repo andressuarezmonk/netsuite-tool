@@ -1,6 +1,8 @@
 import { createRoot } from "react-dom/client";
 import { TARGET_SCRIPT, setHandlerScriptId } from "@/utils/constants";
+import { ThemeService } from "@/services/theme.service";
 import App from "./App";
+import "./styles/theme.scss";
 
 const params = new URLSearchParams(window.location.search);
 if (params.get("script") === TARGET_SCRIPT) {
@@ -34,7 +36,9 @@ if (params.get("script") === TARGET_SCRIPT) {
     // Wipe the body and render directly — no Shadow DOM.
     // Vite injects our compiled CSS into <head> automatically.
     document.body.innerHTML = "";
-    document.body.style.cssText = "margin:0;padding:20px;background:#eef0f8;";
+    ThemeService.apply(ThemeService.get());
+    document.body.style.cssText =
+      "margin:0;padding:20px;background:var(--ft-page-bg);";
 
     createRoot(document.body).render(<App />);
   }
