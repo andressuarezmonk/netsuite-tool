@@ -49,6 +49,7 @@ Own all I/O — HTTP calls, chrome storage, localStorage, and domain operations 
 - `cache.service.ts` — chrome.storage reads/writes + fetch-and-cache strategy
 - `chromeStorage.service.ts` — Promise wrappers for `chrome.storage.local`
 - `session.service.ts` — persists `userId` and `defaultItemId` in `localStorage` (use `window.localStorage`, not bare `localStorage`)
+- `theme.service.ts` — persists the light/dark preference in `localStorage` (`ft_theme`) and applies it via `data-ft-theme` on `<html>`. Falls back to `prefers-color-scheme`.
 - `version.service.ts` — calls `api.github.com` to check for a newer release; returns `VersionCheckResult | null`. Safe to call from a content script — the GitHub API sends CORS headers. Failures are silent (returns `null`).
 
 ### State (`src/context/useStore.ts`)
@@ -67,6 +68,11 @@ Update grouped state with spread: `setWeek(prev => ({ ...prev, weekData: fresh }
 - `useWeekCache` — cache-first loading strategy, stale-request guard via `activeWeekRef`. Reads session from `SessionService.get()`.
 - `useRowMutations` — save debounce, row gate, optimistic delete. Reads session from `SessionService.get()`.
 
+- `useTheme` — light/dark state wrapper around `ThemeService`; used by `Footer` for the theme toggle.
+
+### Theming (`src/styles/`)
+Colour tokens in `_variables.scss` are `var(--ft-*)` references, **not** literal values — never use `darken()`, `rgba($token, …)` or other SCSS colour functions on them. Add a new colour by defining it in both palettes in `theme.scss` and exposing a SCSS token in `_variables.scss`. Don't hardcode hex colours in component styles.
+
 ### Pages (`src/pages/`)
 - `HomePage.tsx` — calls `useStore()` and `useHomePageData()`, provides context, renders layout
 - `useHomePage.data.ts` — orchestration: init fetch, navigation logic, wires `useWeekCache`
@@ -75,7 +81,7 @@ Update grouped state with spread: `setWeek(prev => ({ ...prev, weekData: fresh }
 ### Components (`src/components/`)
 - `atoms/` — small, no direct API calls or store mutations
 - `blocks/` — larger UI blocks; may read from `useStore()` but do not own state
-- `Footer` — calls `VersionService.check()` on mount; if `hasUpdate` is true, renders an update banner above the footer text. Self-contained — no store state involved.
+- `Footer` — calls `VersionService.check()` on mount; if `hasUpdate` is true, renders an update banner above the footer text. Also hosts the light/dark toggle (via `useTheme`). Self-contained — no store state involved.
 
 ### Mocks (`src/mocks/`)
 Development stubs for visual testing. Never imported in production code paths.

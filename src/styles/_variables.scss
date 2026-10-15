@@ -1,45 +1,62 @@
 // ── Design tokens ────────────────────────────────────────────────────────────
+// Colour tokens resolve to CSS custom properties so they can switch between the
+// light and dark palettes at runtime. The actual values live in theme.scss.
 
 // Brand
-$primary: #0066cc;
-$primary-dark: #0055aa;
+$primary: var(--ft-primary);
+$primary-dark: var(--ft-primary-dark);
+$primary-tint: var(--ft-primary-tint);
 
-// Header
+// Header (dark in both themes)
 $header-from: #1a1a2e;
 $header-to: #16213e;
 
 // Surfaces
-$surface: white;
-$surface-muted: #f8f9fc;
-$border: #edf0f7;
-$border-input: #dde1e9;
+$surface: var(--ft-surface);
+$surface-muted: var(--ft-surface-muted);
+$border: var(--ft-border);
+$border-input: var(--ft-border-input);
+$border-row: var(--ft-border-row);
+$row-hover: var(--ft-row-hover);
+$bg-today: var(--ft-bg-today);
+$bg-has-value: var(--ft-bg-has-value);
 
 // Text
-$text: #1a1a2e;
-$text-muted: #888;
-$text-light: #bbb;
+$text: var(--ft-text);
+$text-strong: var(--ft-text-strong);
+$text-secondary: var(--ft-text-secondary);
+$text-muted: var(--ft-text-muted);
+$text-light: var(--ft-text-light);
+$text-faint: var(--ft-text-faint);
 
 // Status
-$color-cache: #6d28d9;
-$bg-cache: #f3eefe;
-$color-fetch: #1a73e8;
-$bg-fetch: #e8f0fe;
-$color-mutation: #e65100;
-$bg-mutation: #fff3e0;
-$color-success: #1e7e34;
-$bg-success: #e6f4ea;
-$color-error: #c0392b;
-$bg-error: #fdecea;
+$color-cache: var(--ft-color-cache);
+$bg-cache: var(--ft-bg-cache);
+$color-fetch: var(--ft-color-fetch);
+$bg-fetch: var(--ft-bg-fetch);
+$color-mutation: var(--ft-color-mutation);
+$bg-mutation: var(--ft-bg-mutation);
+$color-success: var(--ft-color-success);
+$bg-success: var(--ft-bg-success);
+$color-error: var(--ft-color-error);
+$bg-error: var(--ft-bg-error);
 
 // Cell states
-$color-approved: #1e7e34;
-$bg-approved: #e6f4ea;
-$border-approved: #b7dfc0;
-$color-submitted: #1a73e8;
-$bg-submitted: #e8f0fe;
-$border-submitted: #9ab8e8;
-$color-holiday: #c0392b;
-$bg-holiday: #fdf0ee;
+$color-approved: var(--ft-color-approved);
+$bg-approved: var(--ft-bg-approved);
+$border-approved: var(--ft-border-approved);
+$color-submitted: var(--ft-color-submitted);
+$bg-submitted: var(--ft-bg-submitted);
+$border-submitted: var(--ft-border-submitted);
+$color-holiday: var(--ft-color-holiday);
+$bg-holiday: var(--ft-bg-holiday);
+
+// Controls
+$border-control: var(--ft-border-control);
+$text-control: var(--ft-text-control);
+
+// Elevation
+$shadow-card: var(--ft-shadow-card);
 
 // Layout
 $pad-x: 24px;

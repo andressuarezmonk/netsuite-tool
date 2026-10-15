@@ -3,7 +3,7 @@
 // DayTotals uses the table's tfoot styles defined in index.module.scss.
 // This file exists as a placeholder for any DayTotals-specific overrides.
 .today {
-  background: #fffbe6 !important;
+  background: $bg-today !important;
 }
 .holiday {
   background: $bg-holiday !important;
