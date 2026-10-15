@@ -51,6 +51,7 @@ Own all I/O — HTTP calls, chrome storage, localStorage, and domain operations 
 - `session.service.ts` — persists `userId` and `defaultItemId` in `localStorage` (use `window.localStorage`, not bare `localStorage`)
 - `theme.service.ts` — persists the light/dark preference in `localStorage` (`ft_theme`) and applies it via `data-ft-theme` on `<html>`. Falls back to `prefers-color-scheme`.
 - `target.service.ts` — persists the weekly hours target in `localStorage` (`ft_weekly_target`, default 40). Pure target maths (daily share, under/over status) lives in `src/utils/target.ts`.
+- `reminder.service.ts` — persists the opt-in reminder settings and the hours snapshot in `chrome.storage.local` (not `localStorage`, because the background service worker can't read the page's). Pure logic (next fire time, notification text) lives in `src/utils/reminder.ts`.
 - `version.service.ts` — calls `api.github.com` to check for a newer release; returns `VersionCheckResult | null`. Safe to call from a content script — the GitHub API sends CORS headers. Failures are silent (returns `null`).
 
 ### State (`src/context/useStore.ts`)
@@ -70,6 +71,8 @@ Update grouped state with spread: `setWeek(prev => ({ ...prev, weekData: fresh }
 - `useRowMutations` — save debounce, row gate, optimistic delete. Reads session from `SessionService.get()`.
 
 - `useWeeklyTarget` — weekly target state wrapper around `TargetService`; called once in `HomePage` and passed as props to `WeekProgress` and `WeekGrid` so both stay in sync.
+- `useHoursSnapshot` — called once in `HomePage`; writes the current week's logged hours + target to `chrome.storage.local` so `background.ts` can build the reminder without calling NetSuite. Only the current week is recorded.
+- `useReminderSettings` — load/save wrapper around `ReminderService` settings; used by `ReminderBell`.
 - `useTheme` — light/dark state wrapper around `ThemeService`; used by `Footer` for the theme toggle.
 
 ### Theming (`src/styles/`)
@@ -84,6 +87,9 @@ Colour tokens in `_variables.scss` are `var(--ft-*)` references, **not** literal
 - `atoms/` — small, no direct API calls or store mutations
 - `blocks/` — larger UI blocks; may read from `useStore()` but do not own state
 - `Footer` — calls `VersionService.check()` on mount; if `hasUpdate` is true, renders an update banner above the footer text. Also hosts the light/dark toggle (via `useTheme`). Self-contained — no store state involved.
+
+### Background service worker (`src/background.ts`)
+Fires the opt-in hours reminder via `chrome.alarms` + `chrome.notifications`. It has no `window`, so it may only import window-free modules: use `@/utils/days` (not `@/utils/constants`, which reads `window.location` on load), `@/utils/dates`, `@/utils/reminder` and `@/services/reminder.service`. Never import the HTTP services or `apiClient.service` from it.
 
 ### Mocks (`src/mocks/`)
 Development stubs for visual testing. Never imported in production code paths.

@@ -1,0 +1,169 @@
+@use "../../../styles/variables" as *;
+
+.container {
+  position: relative;
+}
+
+.bellButton {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  line-height: 0;
+  // Sits on the always-dark header, so it uses white like the header text.
+  color: white;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity $t;
+
+  &:hover,
+  &[aria-expanded="true"] {
+    opacity: 1;
+  }
+}
+
+// Inline SVG (bell-on.svg / bell-off.svg) — fill is currentColor.
+.bellIcon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+}
+
+.activeDot {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: $color-success;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 20;
+  width: 290px;
+  padding: 14px;
+  background: $surface;
+  color: $text;
+  border: 1px solid $border;
+  border-radius: $radius;
+  box-shadow: $shadow-card;
+  font-size: 12px;
+  text-align: left;
+}
+
+.enableRow,
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.enableRow {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.options {
+  border: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.groupLabel {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: $text-muted;
+}
+
+.days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dayChip {
+  background: none;
+  border: 1px solid $border-input;
+  border-radius: $radius;
+  padding: 3px 7px;
+  font-family: inherit;
+  font-size: 11px;
+  color: $text-muted;
+  cursor: pointer;
+  transition:
+    border-color $t,
+    color $t,
+    background $t;
+
+  &:hover:not(:disabled) {
+    border-color: $primary;
+    color: $primary;
+  }
+}
+
+.dayChipActive {
+  background: $primary-tint;
+  border-color: $primary;
+  color: $primary;
+  font-weight: 600;
+}
+
+.timeInput {
+  width: 110px;
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  color: $text;
+  background: $surface;
+  border: 1px solid $border-input;
+  border-radius: $radius;
+}
+
+.note {
+  margin: 12px 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: $text-muted;
+}
+
+.testButton {
+  width: 100%;
+  background: none;
+  border: 1px solid $border-input;
+  border-radius: $radius;
+  padding: 5px 0;
+  font-family: inherit;
+  font-size: 12px;
+  color: $text-control;
+  cursor: pointer;
+  transition:
+    border-color $t,
+    color $t;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+}

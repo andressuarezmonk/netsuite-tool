@@ -17,7 +17,7 @@ export default defineConfig({
         name: 'NetSuite Fast Time Tracker',
         version: pkg.version,
         description: 'Fast time entry for NetSuite',
-        permissions: ['activeTab', 'storage'],
+        permissions: ['activeTab', 'storage', 'alarms', 'notifications'],
         host_permissions: [
           'https://*.netsuite.com/*',
           'https://api.github.com/*',

@@ -32,5 +32,4 @@ export function setHandlerScriptId(scriptId: string): void {
 }
 
 export const TARGET_SCRIPT = "2375";
-export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
-export type DayKey = (typeof DAYS)[number];
+export { DAYS, type DayKey } from "./days";
