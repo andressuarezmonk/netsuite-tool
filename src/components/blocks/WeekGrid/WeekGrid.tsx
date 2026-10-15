@@ -1,5 +1,6 @@
 import { DAYS } from "@/utils/constants";
 import { addDays, todayISO, isoDayMonthDisplay } from "@/utils/dates";
+import { getDailyTarget } from "@/utils/target";
 import TimeRow from "../TimeRow/TimeRow";
 import DayTotals from "../DayTotals/DayTotals";
 import { useStore } from "../../../context/AppContext";
@@ -7,7 +8,11 @@ import styles from "./WeekGrid.module.scss";
 
 const DAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export default function WeekGrid() {
+export interface WeekGridProps {
+  weeklyTarget: number;
+}
+
+export default function WeekGrid({ weeklyTarget }: WeekGridProps) {
   const { weekStore } = useStore();
   const { weekData, weekISO } = weekStore.week;
   const today = todayISO();
@@ -71,6 +76,7 @@ export default function WeekGrid() {
             dayDates={dayDates}
             today={today}
             holidays={holidays}
+            dailyTarget={getDailyTarget(weeklyTarget)}
           />
         </tfoot>
       </table>

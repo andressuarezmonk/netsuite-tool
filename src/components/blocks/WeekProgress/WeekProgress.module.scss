@@ -1,0 +1,107 @@
+@use "../../../styles/variables" as *;
+
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px $pad-x;
+  border-bottom: 1px solid $border;
+  background: $surface;
+}
+
+.summary {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.hours {
+  font-size: 14px;
+  font-weight: 700;
+  color: $text;
+}
+
+.remaining {
+  font-size: 12px;
+  color: $text-muted;
+}
+
+.remainingComplete {
+  color: $color-success;
+  font-weight: 600;
+}
+
+.remainingOver {
+  color: $color-fetch;
+  font-weight: 600;
+}
+
+.holidayNote {
+  font-size: 11px;
+  color: $color-holiday;
+  cursor: help;
+}
+
+.track {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: $border;
+  overflow: hidden;
+}
+
+%fill {
+  height: 100%;
+  border-radius: 4px;
+  transition:
+    width 0.25s ease,
+    background $t;
+}
+
+.bar {
+  @extend %fill;
+  background: $primary;
+}
+
+.barComplete {
+  @extend %fill;
+  background: $color-success;
+}
+
+.barOver {
+  @extend %fill;
+  background: $color-fetch;
+}
+
+.targetButton {
+  background: none;
+  border: 1px solid $border-input;
+  border-radius: $radius;
+  padding: 2px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  color: $text-muted;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    border-color $t,
+    color $t;
+
+  &:hover {
+    border-color: $primary;
+    color: $primary;
+  }
+}
+
+.targetInput {
+  width: 80px;
+  padding: 2px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  color: $text;
+  background: $surface;
+  border: 1.5px solid $primary;
+  border-radius: $radius;
+  outline: none;
+}
