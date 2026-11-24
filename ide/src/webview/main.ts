@@ -113,8 +113,10 @@ function renderMessageCard(
 }
 
 function renderNotReady(current: WeekViewModel | null): string {
-  switch (current?.state) {
-    case undefined:
+  if (!current) {
+    return `<div class="state-card"><p class="loading">Loading…</p></div>`;
+  }
+  switch (current.state) {
     case "loading":
       return `<div class="state-card"><p class="loading">Loading…</p></div>`;
     case "notPaired":
@@ -123,13 +125,33 @@ function renderNotReady(current: WeekViewModel | null): string {
         "Pair this extension with the NetSuite Fast Time Tracker Chrome extension to see and log your hours here. Then paste the copied code into the Chrome extension's popup.",
         [{ label: "Pair with Chrome", command: "pair" }],
       );
-    case "waiting":
+    case "waiting": {
+      const buttons: Array<{ label: string; command: WebviewCommand }> = [
+        { label: "Retry", command: "refresh" },
+        { label: "Copy pairing code", command: "pair" },
+      ];
+      if (current.hasWaitedLong) {
+        buttons.push({
+          label: "Get Chrome extension",
+          command: "openWebReleases",
+        });
+      }
       return renderMessageCard(
         "Waiting for Chrome…",
-        "Make sure Chrome is open and the NetSuite Fast Time Tracker extension is paired.",
+        current.hasWaitedLong
+          ? `Still nothing. Make sure Chrome is open and the extension is paired. This also needs the NetSuite Fast Time Tracker Chrome extension v${current.minimumChromeVersion} or newer — if its popup has no "VS Code" section, it is too old and needs updating.`
+          : "Make sure Chrome is open and the NetSuite Fast Time Tracker extension is paired.",
+        buttons,
+      );
+    }
+    case "incompatible":
+      return renderMessageCard(
+        "Update needed",
+        current.errorMessage ||
+          "The Chrome extension and this VS Code extension don't work together.",
         [
-          { label: "Retry", command: "refresh" },
-          { label: "Copy pairing code", command: "pair" },
+          { label: "Get Chrome extension", command: "openWebReleases" },
+          { label: "Get VS Code extension", command: "openIdeReleases" },
         ],
       );
     case "portInUse":

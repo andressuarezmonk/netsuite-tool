@@ -130,6 +130,14 @@ All three responses are merged before returning `WeekData`.
 ### Handler URL
 The NS data handler URL is dynamic — the account ID is part of the hostname. `readConnectionFromPage()` builds it from `window.location` (and the inner iframe's script ID) and hands it to `ConnectionService`; `resolveHandlerRequest()` in `apiClient.service.ts` reads it back and extracts the `script` and `deploy` params. Nothing outside `utils/pageConnection.ts` and `index.tsx` should touch `window.location` for this.
 
+## Releases and commit scopes
+
+- The Chrome extension is released by semantic-release from `master` (tags `vX.Y.Z`); the VS Code extension is released separately by pushing `ide-vX.Y.Z` (see the root README). They share one repository, so:
+- **A commit that only touches `ide/` must use the `(ide)` scope** (`feat(ide): …`). `web/.releaserc.json` ignores `(ide)` commits; an unscoped `feat:`/`fix:` triggers a Chrome release even if it only changed `ide/`.
+- **Never let a VS Code release become the repository's "latest" release.** Installed Chrome extensions read `releases/latest` (old versions) or the newest `vX.Y.Z` release (`VersionService`, new versions). `.github/workflows/ide-release.yml` publishes with `--latest=false` and `scripts/ensure-web-latest.sh` verifies it.
+- `VersionService` picks the newest `vX.Y.Z` release from the release list, ignoring `ide-v*`, drafts and prereleases.
+- Chrome ships first: `MIN_CHROME_EXTENSION_VERSION` (`ide/src/constants.ts`) must always be a released Chrome version before a VS Code release is cut (`scripts/check-ide-release.sh` enforces it).
+
 ## Manifest and versioning
 
 The extension manifest is generated at build time in `vite.config.ts`. The `version` field is read from `package.json` — never hardcode it in `vite.config.ts`. When `semantic-release` bumps `package.json`, the next build automatically picks up the new version.

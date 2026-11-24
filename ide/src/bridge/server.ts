@@ -26,6 +26,7 @@ import {
   type ServerMessage,
 } from "@protocol";
 import { isRecord } from "@/utils/guards";
+import { compareVersions, parseVersion } from "@/utils/versions";
 
 const LOOPBACK_HOST = "127.0.0.1";
 /** Browsers always send an Origin; ours is the extension's. Web pages are not. */
@@ -48,6 +49,19 @@ export interface BridgeConnection {
   close(): void;
 }
 
+/** Why an otherwise correctly-paired client was turned away. */
+export type ClientRejection =
+  | {
+      reason: "protocolMismatch";
+      chromeProtocolVersion: number;
+      chromeExtensionVersion: string;
+    }
+  | {
+      reason: "chromeTooOld";
+      chromeExtensionVersion: string;
+      minimumVersion: string;
+    };
+
 export interface BridgeServerOptions {
   port: number;
   /** The pairing token, or undefined when not paired (then nobody gets in). */
@@ -55,6 +69,10 @@ export interface BridgeServerOptions {
   onConnectionReady: (connection: BridgeConnection) => void;
   onConnectionClosed: (connection: BridgeConnection) => void;
   onResponse: (connection: BridgeConnection, response: BridgeResponse) => void;
+  /** Oldest Chrome extension version accepted; omit to accept any. */
+  minimumExtensionVersion?: string;
+  /** Called when a client proved the token but can't be served. */
+  onClientRejected?: (rejection: ClientRejection) => void;
   handshakeTimeoutMs?: number;
   idleTimeoutMs?: number;
 }
@@ -187,7 +205,28 @@ export function createBridgeServer(options: BridgeServerOptions): BridgeServer {
         return socket.close(CLOSE_CODE_UNAUTHORIZED, "Bad proof");
       }
       if (clientProtocolVersion !== PROTOCOL_VERSION) {
+        options.onClientRejected?.({
+          reason: "protocolMismatch",
+          chromeProtocolVersion: clientProtocolVersion,
+          chromeExtensionVersion: extensionVersion,
+        });
         return socket.close(CLOSE_CODE_INCOMPATIBLE, "Protocol mismatch");
+      }
+      const minimumVersion = options.minimumExtensionVersion;
+      const isChromeTooOld =
+        minimumVersion !== undefined &&
+        (parseVersion(extensionVersion) === null ||
+          compareVersions(extensionVersion, minimumVersion) < 0);
+      if (minimumVersion !== undefined && isChromeTooOld) {
+        options.onClientRejected?.({
+          reason: "chromeTooOld",
+          chromeExtensionVersion: extensionVersion,
+          minimumVersion,
+        });
+        return socket.close(
+          CLOSE_CODE_INCOMPATIBLE,
+          "Chrome extension too old",
+        );
       }
       if (isClosed()) return;
       if (activeConnection) {

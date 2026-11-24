@@ -20,6 +20,7 @@ export type ViewState =
   | "notPaired"
   | "waiting"
   | "portInUse"
+  | "incompatible"
   | "sessionExpired"
   | "notConfigured"
   | "error";
@@ -82,6 +83,10 @@ export interface WeekViewModel {
   mondayISO: string;
   rangeLabel: string;
   isCurrentWeek: boolean;
+  /** True once we have been waiting for Chrome long enough to suspect an old extension. */
+  hasWaitedLong: boolean;
+  /** The oldest Chrome extension this version works with, for the help text. */
+  minimumChromeVersion: string;
   days: DayColumn[];
   rows: RowModel[];
   projects: NamedItem[];
@@ -220,6 +225,8 @@ export interface WeekViewModelInput {
   week: WeekResult | null;
   mondayISO: string;
   todayISO: string;
+  hasWaitedLong?: boolean;
+  minimumChromeVersion?: string;
 }
 
 const EMPTY_PROGRESS: ProgressModel = {
@@ -239,6 +246,8 @@ export function buildWeekViewModel(input: WeekViewModelInput): WeekViewModel {
     mondayISO,
     rangeLabel: formatWeekRange(mondayISO),
     isCurrentWeek: mondayISO === getMondayISO(todayISO),
+    hasWaitedLong: input.hasWaitedLong ?? false,
+    minimumChromeVersion: input.minimumChromeVersion ?? "",
   };
 
   if (!week || viewState !== "ready") {

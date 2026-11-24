@@ -3,8 +3,10 @@ import { registerCommands } from "@/commands";
 import { createBridgeRepository } from "@/data/bridgeRepository";
 import { createMockWeekRepository } from "@/data/mockWeekRepository";
 import type { WeekRepository } from "@/data/weekRepository";
+import { MIN_CHROME_EXTENSION_VERSION } from "@/constants";
 import { createPairingStore, getConfiguredPort } from "@/pairing";
 import { WeekStore } from "@/state/weekStore";
+import { createUpdateNotifier } from "@/update/updateNotifier";
 import { createStatusBar } from "@/views/statusBar";
 import { WEEK_VIEW_ID, WeekWebviewController } from "@/views/weekWebview";
 
@@ -24,6 +26,7 @@ export async function activate(
   // Launch with NETSUITE_TRACKER_MOCK=1 (the "mock data" launch configuration)
   // to develop the UI without Chrome or NetSuite.
   const isMockMode = process.env.NETSUITE_TRACKER_MOCK === "1";
+  const isDevelopmentBuild = process.env.NETSUITE_TRACKER_DEV === "1";
   let repository: WeekRepository;
   let onPairingChanged: () => Promise<void> = async () => {};
   if (isMockMode) {
@@ -32,6 +35,11 @@ export async function activate(
     const bridgeRepository = createBridgeRepository({
       getToken: () => pairingStore.getToken(),
       getPort: getConfiguredPort,
+      // Development builds of the Chrome extension carry the version of the
+      // last release, so the check is skipped for them (see launch.json)
+      minimumChromeVersion: isDevelopmentBuild
+        ? undefined
+        : MIN_CHROME_EXTENSION_VERSION,
     });
     repository = bridgeRepository;
     onPairingChanged = () => bridgeRepository.refresh();
@@ -53,6 +61,7 @@ export async function activate(
     weekStore,
   );
 
+  const checkForUpdates = createUpdateNotifier(context);
   const syncContextKey = () => {
     void vscode.commands.executeCommand(
       "setContext",
@@ -67,6 +76,7 @@ export async function activate(
     pairingStore,
     onPairingChanged,
     openInEditor: () => weekViewController.openInEditor(),
+    checkForUpdates,
   });
 
   context.subscriptions.push(
@@ -89,6 +99,10 @@ export async function activate(
   );
 
   void weekStore.refresh();
+  // Only installed builds nag about updates, not the development host
+  if (context.extensionMode === vscode.ExtensionMode.Production) {
+    void checkForUpdates(false);
+  }
   return { weekStore, weekViewController };
 }
 

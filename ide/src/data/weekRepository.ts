@@ -11,6 +11,7 @@ export type RepositoryStatus =
   | "notPaired" // no pairing token yet
   | "waiting" // paired, but Chrome isn't connected
   | "portInUse" // can't listen: another program or VS Code window has the port
+  | "incompatible" // Chrome connected but its version can't work with this one
   | "connected";
 
 export type RepositoryErrorCode = BridgeErrorCode | "NOT_CONNECTED";
@@ -32,6 +33,8 @@ export class RepositoryError extends Error {
 export interface WeekRepository {
   readonly status: RepositoryStatus;
   readonly onDidChangeStatus: Event<RepositoryStatus>;
+  /** Human-readable detail for the current non-connected status, if any. */
+  readonly statusDetail?: string;
   /** The NetSuite account Chrome is using, once known. */
   readonly accountOrigin: string | null;
   getWeek(mondayISO: string): Promise<WeekResult>;

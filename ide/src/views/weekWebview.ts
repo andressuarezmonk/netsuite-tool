@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { BridgeDayKey } from "@protocol";
 import { reportOperationError } from "@/commands/errors";
 import { DAY_KEYS, MAX_HOURS_PER_DAY } from "@/model/weekModel";
+import { MIN_CHROME_EXTENSION_VERSION } from "@/constants";
 import { buildWeekViewModel, type WeekViewModel } from "@/model/weekViewModel";
 import type { WeekStore } from "@/state/weekStore";
 import { todayISO } from "@/utils/dates";
@@ -26,6 +27,8 @@ const WEBVIEW_COMMANDS: readonly WebviewCommand[] = [
   "openNetSuite",
   "refresh",
   "openSettings",
+  "openWebReleases",
+  "openIdeReleases",
 ];
 const DELETE_ACTION = "Delete";
 
@@ -110,6 +113,8 @@ export class WeekWebviewController
       week: this.store.week,
       mondayISO: this.store.mondayISO,
       todayISO: todayISO(),
+      hasWaitedLong: this.store.hasWaitedLong,
+      minimumChromeVersion: MIN_CHROME_EXTENSION_VERSION,
     });
   }
 

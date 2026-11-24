@@ -32,6 +32,38 @@ Chrome must be running and logged in to NetSuite, but no NetSuite tab needs to b
 open. Only one browser can be connected at a time. **Reset Pairing…** (the `…`
 menu in the view title) throws the token away.
 
+### Compatibility and updates
+
+- The extension declares the oldest Chrome extension it works with
+  (`MIN_CHROME_EXTENSION_VERSION`, `src/constants.ts`). A Chrome extension that
+  proves the pairing token but is older (or speaks another protocol version) is
+  turned away and the view says exactly what to update. An attacker without the
+  token can't trigger that message.
+- After 20 s of "Waiting for Chrome…" the card suggests the Chrome extension may
+  be too old (an old one has no bridge and is otherwise indistinguishable from a
+  closed browser).
+- Installed builds check GitHub once a day for a newer `ide-v*` release and tell
+  you; **Check for Updates** does it on demand. A development host never does.
+- Set `NETSUITE_TRACKER_DEV=1` (the F5 launch configs do) to skip the Chrome
+  version check — your local Chrome build still carries the last *released*
+  version number.
+
+### Releasing
+
+Releases are independent of the Chrome extension (see the root README):
+
+```bash
+cd ide
+npm run release:ide -- 0.1.0     # from master, clean and in sync with origin
+```
+
+It refuses unless the Chrome extension this version needs is already released,
+shows the changes, asks for confirmation, then pushes the tag `ide-v0.1.0`. The
+"Release VS Code extension" workflow builds and publishes the `.vsix` (never as
+"latest"). The version in `package.json` is a placeholder: CI stamps it from the tag.
+
+Commits that only touch `ide/` must use the `(ide)` scope.
+
 ### Security model (server side)
 
 Anything on the machine can try to connect to the port, so the server never

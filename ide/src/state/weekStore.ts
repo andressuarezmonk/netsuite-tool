@@ -8,6 +8,8 @@ import type { ViewState } from "@/model/weekViewModel";
 export type { ViewState };
 
 const STALE_AFTER_MS = 60_000;
+// After this long without Chrome we start suggesting the extension is outdated
+const WAITING_HINT_DELAY_MS = 20_000;
 const DAYS_PER_WEEK = 7;
 
 export class WeekStore implements vscode.Disposable {
@@ -15,6 +17,7 @@ export class WeekStore implements vscode.Disposable {
   private readonly statusSubscription: vscode.Disposable;
   private loadSequence = 0;
   private lastLoadedAt = 0;
+  private waitingTimer: ReturnType<typeof setTimeout> | null = null;
   // Saves and deletes run one at a time, so a response can never be built
   // from a week that is missing an earlier, still-in-flight change.
   private mutationQueue: Promise<unknown> = Promise.resolve();
@@ -25,6 +28,7 @@ export class WeekStore implements vscode.Disposable {
   week: WeekResult | null = null;
   viewState: ViewState = "loading";
   errorMessage = "";
+  hasWaitedLong = false;
   /** Last loaded copy of the real current week — drives the status bar. */
   currentWeek: WeekResult | null = null;
 
@@ -48,6 +52,7 @@ export class WeekStore implements vscode.Disposable {
     const sequence = ++this.loadSequence;
 
     if (this.repository.status !== "connected") {
+      this.errorMessage = this.repository.statusDetail ?? "";
       this.showWithoutWeek(this.repository.status);
       return;
     }
@@ -101,6 +106,7 @@ export class WeekStore implements vscode.Disposable {
   }
 
   dispose(): void {
+    if (this.waitingTimer) clearTimeout(this.waitingTimer);
     this.statusSubscription.dispose();
     this.changeEmitter.dispose();
   }
@@ -164,13 +170,33 @@ export class WeekStore implements vscode.Disposable {
     this.setViewState("error");
   }
 
-  private showWithoutWeek(state: "notPaired" | "waiting" | "portInUse"): void {
+  private showWithoutWeek(
+    state: "notPaired" | "waiting" | "portInUse" | "incompatible",
+  ): void {
     this.week = null;
     this.setViewState(state);
   }
 
   private setViewState(state: ViewState): void {
     this.viewState = state;
+    this.trackHowLongWeHaveWaited();
     this.changeEmitter.fire();
+  }
+
+  /** After a while with no Chrome, flip a flag so the card can offer more help. */
+  private trackHowLongWeHaveWaited(): void {
+    if (this.viewState !== "waiting") {
+      if (this.waitingTimer) clearTimeout(this.waitingTimer);
+      this.waitingTimer = null;
+      this.hasWaitedLong = false;
+      return;
+    }
+    if (this.waitingTimer || this.hasWaitedLong) return;
+    this.waitingTimer = setTimeout(() => {
+      this.waitingTimer = null;
+      if (this.viewState !== "waiting") return;
+      this.hasWaitedLong = true;
+      this.changeEmitter.fire();
+    }, WAITING_HINT_DELAY_MS);
   }
 }

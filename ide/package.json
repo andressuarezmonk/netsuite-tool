@@ -87,6 +87,21 @@
         "command": "netsuiteTracker.resetPairing",
         "title": "Reset Pairing\u2026",
         "category": "NetSuite Tracker"
+      },
+      {
+        "command": "netsuiteTracker.openWebReleases",
+        "title": "Get the Chrome Extension",
+        "category": "NetSuite Tracker"
+      },
+      {
+        "command": "netsuiteTracker.openIdeReleases",
+        "title": "Get the VS Code Extension Releases",
+        "category": "NetSuite Tracker"
+      },
+      {
+        "command": "netsuiteTracker.checkForUpdates",
+        "title": "Check for Updates",
+        "category": "NetSuite Tracker"
       }
     ],
     "menus": {
@@ -120,6 +135,11 @@
           "command": "netsuiteTracker.resetPairing",
           "when": "view == netsuiteTracker.week",
           "group": "1_connection@3"
+        },
+        {
+          "command": "netsuiteTracker.checkForUpdates",
+          "when": "view == netsuiteTracker.week",
+          "group": "2_help@1"
         }
       ]
     },
@@ -141,15 +161,24 @@
     "watch": "node esbuild.mjs --watch",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
     "format": "prettier --write \"src/**/*.ts\"",
-    "format:check": "prettier --check \"src/**/*.ts\""
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "package": "vsce package --no-dependencies --skip-license",
+    "release:ide": "bash ../scripts/release-ide.sh"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "1.90.0",
     "@types/ws": "^8.18.2",
+    "@vscode/vsce": "^4.1.1",
     "esbuild": "^0.25.0",
     "prettier": "^3.3.0",
     "typescript": "^5.4.0",
     "ws": "^8.23.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andressuarezmonk/netsuite-tool.git",
+    "directory": "ide"
+  },
+  "homepage": "https://github.com/andressuarezmonk/netsuite-tool#readme"
 }

@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import type { PairingStore } from "@/pairing";
 import { buildPairingCode } from "@/pairing";
 import type { WeekStore } from "@/state/weekStore";
+import { IDE_RELEASES_URL, WEB_RELEASES_URL } from "@/constants";
 import { logHours } from "./hoursCommands";
 
 const RESET_ACTION = "Reset";
@@ -12,11 +13,19 @@ interface CommandDependencies {
   /** Called after a pairing code is created so the UI moves on from "not paired". */
   onPairingChanged: () => Promise<void>;
   openInEditor: () => void;
+  /** Looks for a newer release of this extension; manual checks report even "up to date". */
+  checkForUpdates: (isManual: boolean) => Promise<void>;
 }
 
 export function registerCommands(
   context: vscode.ExtensionContext,
-  { store, pairingStore, onPairingChanged, openInEditor }: CommandDependencies,
+  {
+    store,
+    pairingStore,
+    onPairingChanged,
+    openInEditor,
+    checkForUpdates,
+  }: CommandDependencies,
 ): void {
   const register = (
     commandId: string,
@@ -57,6 +66,14 @@ export function registerCommands(
     await pairingStore.clearToken();
     await onPairingChanged();
   });
+
+  register("netsuiteTracker.openWebReleases", () =>
+    vscode.env.openExternal(vscode.Uri.parse(WEB_RELEASES_URL)),
+  );
+  register("netsuiteTracker.openIdeReleases", () =>
+    vscode.env.openExternal(vscode.Uri.parse(IDE_RELEASES_URL)),
+  );
+  register("netsuiteTracker.checkForUpdates", () => checkForUpdates(true));
 
   register("netsuiteTracker.openNetSuite", async () => {
     const accountOrigin = store.accountOrigin;

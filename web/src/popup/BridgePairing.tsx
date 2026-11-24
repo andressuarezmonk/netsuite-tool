@@ -21,6 +21,11 @@ const STATE_COLORS: Record<BridgeConnectionState, string> = {
   incompatible: "#c62828",
 };
 
+// The VS Code extension is released separately; this popup is where users are
+// pointed to it, so they only see it once they have this (bridge-capable) version.
+const VSCODE_EXTENSION_RELEASES_URL =
+  "https://github.com/andressuarezmonk/netsuite-tool/releases?q=ide-v";
+
 const SMALL_BUTTON_STYLE = {
   padding: "5px 10px",
   fontSize: 11,
@@ -95,6 +100,18 @@ export default function BridgePairing() {
           >
             Pair
           </button>
+          <div style={{ marginTop: 8 }}>
+            <a
+              href={VSCODE_EXTENSION_RELEASES_URL}
+              onClick={(event) => {
+                event.preventDefault();
+                chrome.tabs.create({ url: VSCODE_EXTENSION_RELEASES_URL });
+              }}
+              style={{ fontSize: 11, color: "#0066cc" }}
+            >
+              Get the VS Code extension →
+            </a>
+          </div>
         </>
       )}
     </div>

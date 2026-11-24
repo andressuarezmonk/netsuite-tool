@@ -2,8 +2,9 @@
 // No `vscode` import, so it can be tested in plain Node together with the
 // real Chrome-side code.
 
-import type {
-  BridgeRequestEnvelope,
+import {
+  PROTOCOL_VERSION,
+  type BridgeRequestEnvelope,
   BridgeRequestMap,
   BridgeRequestType,
   BridgeResponse,
@@ -17,9 +18,11 @@ import {
   isAddressInUseError,
   type BridgeConnection,
   type BridgeServer,
+  type ClientRejection,
 } from "@/bridge/server";
 import { SimpleEventEmitter, type Disposable } from "@/utils/events";
 import { isRecord } from "@/utils/guards";
+import { parseVersion } from "@/utils/versions";
 import {
   RepositoryError,
   type RepositoryStatus,
@@ -37,6 +40,8 @@ export interface BridgeRepositoryOptions {
   portRetryIntervalMs?: number;
   handshakeTimeoutMs?: number;
   idleTimeoutMs?: number;
+  /** Oldest Chrome extension version to accept; omit to accept any. */
+  minimumChromeVersion?: string;
 }
 
 export interface BridgeRepository extends WeekRepository, Disposable {
@@ -51,6 +56,25 @@ interface PendingRequest {
   resolve: (data: unknown) => void;
   reject: (error: Error) => void;
   timer: ReturnType<typeof setTimeout>;
+}
+
+/** Turns a rejection into advice the user can act on. */
+export function describeRejection(rejection: ClientRejection): string {
+  // The version comes from the other side: only quote it back if it's sane
+  const readableVersion =
+    parseVersion(rejection.chromeExtensionVersion) !== null
+      ? rejection.chromeExtensionVersion
+      : "";
+  if (rejection.reason === "chromeTooOld") {
+    const yours = readableVersion
+      ? `yours is v${readableVersion}`
+      : "couldn't read your version";
+    return `This VS Code extension needs Chrome extension v${rejection.minimumVersion} or newer (${yours}). Update the Chrome extension.`;
+  }
+  const chromeVersion = readableVersion ? ` (v${readableVersion})` : "";
+  return rejection.chromeProtocolVersion > PROTOCOL_VERSION
+    ? `Your Chrome extension${chromeVersion} is newer than this VS Code extension understands. Update the VS Code extension.`
+    : `Your Chrome extension${chromeVersion} is older than this VS Code extension understands. Update the Chrome extension.`;
 }
 
 const unexpectedResponse = () =>
@@ -86,6 +110,7 @@ export function createBridgeRepository(
   let isTokenPresent = false;
   let isPortInUse = false;
   let accountOrigin: string | null = null;
+  let incompatibility: string | null = null;
   let retryTimer: ReturnType<typeof setTimeout> | null = null;
   let nextRequestId = 1;
   let lastPublishedStatus: RepositoryStatus = "notPaired";
@@ -96,6 +121,7 @@ export function createBridgeRepository(
   const computeStatus = (): RepositoryStatus => {
     if (!isTokenPresent) return "notPaired";
     if (activeConnection) return "connected";
+    if (incompatibility !== null) return "incompatible";
     return isPortInUse ? "portInUse" : "waiting";
   };
 
@@ -177,6 +203,7 @@ export function createBridgeRepository(
   const handleConnectionReady = (connection: BridgeConnection) => {
     // The server admits one connection at a time, so this is the only one
     activeConnection = connection;
+    incompatibility = null;
     publishStatus();
     void fetchAccountOrigin();
   };
@@ -208,6 +235,7 @@ export function createBridgeRepository(
     if (!isTokenPresent) {
       await stopServer();
       accountOrigin = null;
+      incompatibility = null;
       publishStatus();
       return;
     }
@@ -223,6 +251,11 @@ export function createBridgeRepository(
       onConnectionClosed: handleConnectionClosed,
       onResponse: handleResponse,
       handshakeTimeoutMs: options.handshakeTimeoutMs,
+      minimumExtensionVersion: options.minimumChromeVersion,
+      onClientRejected: (rejection) => {
+        incompatibility = describeRejection(rejection);
+        publishStatus();
+      },
       idleTimeoutMs: options.idleTimeoutMs,
     });
     try {
@@ -252,6 +285,9 @@ export function createBridgeRepository(
       return computeStatus();
     },
     onDidChangeStatus: statusEmitter.event,
+    get statusDetail() {
+      return incompatibility ?? undefined;
+    },
     get accountOrigin() {
       return accountOrigin;
     },

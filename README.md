@@ -182,6 +182,25 @@ git checkout develop
 git pull origin develop
 ```
 
+## VS Code extension releases
+
+The VS Code extension ([`ide/`](ide)) is released **independently** of the Chrome extension, from the same repository:
+
+| | Chrome extension | VS Code extension |
+|---|---|---|
+| Tag | `vX.Y.Z` | `ide-vX.Y.Z` |
+| Triggered by | merging to `master` (semantic-release, see above) | pushing the tag — `npm run release:ide -- X.Y.Z` from `ide/` |
+| Artifact | `dist.zip` | `.vsix` |
+| Marked "latest"? | yes | **never** (`--latest=false`) |
+
+Why "never latest": every installed Chrome extension reads the repository's `releases/latest` to show its update banner, so that must always be a Chrome release. The VS Code release workflow marks its release as not-latest and then verifies (and repairs) that invariant.
+
+**Commit scopes decide which release a commit can trigger.** A change that only touches the VS Code extension must be committed with the `(ide)` scope (`feat(ide): …`, `fix(ide): …`); the Chrome release config ignores those. An unscoped `feat:`/`fix:` always releases the Chrome extension.
+
+**Order: Chrome first, always.** The VS Code extension declares the oldest Chrome extension it works with (`MIN_CHROME_EXTENSION_VERSION` in `ide/src/constants.ts`). `scripts/release-ide.sh` and the release workflow both refuse to publish a VS Code release until a Chrome release at least that new exists, and at runtime the extension turns away older Chrome extensions with an explanation. Raise the constant whenever the VS Code extension starts needing something newer in Chrome — and for a breaking protocol change, release Chrome first.
+
+Users find the VS Code extension through a link in the Chrome extension's popup, so they only see it once they have a bridge-capable Chrome extension.
+
 ## Architecture
 
 State is managed with three grouped `useState` calls in `useStore` — `week`, `catalog`, and `statuses` — exposed through a single React context (`AppContext`). Components read from the store via `useStore()`.

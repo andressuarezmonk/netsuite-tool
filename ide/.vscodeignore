@@ -4,3 +4,5 @@ esbuild.mjs
 tsconfig.json
 .prettierrc
 **/*.map
+tsconfig.webview.json
+*.vsix

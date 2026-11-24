@@ -12,6 +12,7 @@ const HIDDEN_STATES: readonly ViewState[] = [
   "notPaired",
   "waiting",
   "portInUse",
+  "incompatible",
   "sessionExpired",
   "notConfigured",
 ];

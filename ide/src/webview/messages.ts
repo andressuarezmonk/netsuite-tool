@@ -11,7 +11,12 @@ export type ExtensionToWebview =
 
 export type NavigationTarget = "previous" | "next" | "current";
 export type WebviewCommand =
-  "pair" | "openNetSuite" | "refresh" | "openSettings";
+  | "pair"
+  | "openNetSuite"
+  | "refresh"
+  | "openSettings"
+  | "openWebReleases"
+  | "openIdeReleases";
 
 export type WebviewToExtension =
   | { type: "ready" }
