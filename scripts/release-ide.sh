@@ -67,6 +67,19 @@ if [[ "$ASSUME_YES" != "1" ]]; then
   fi
 fi
 
+# GitHub Actions skips every workflow for a push whose head commit message
+# contains [skip ci] (and friends) — tags included. semantic-release's release
+# commit carries [skip ci], so right after a Chrome release HEAD is exactly
+# that: tagging it would silently never start the release workflow. In that
+# case tag a fresh commit on top instead.
+SKIP_PATTERN='\[(skip ci|ci skip|no ci|skip actions|actions skip)\]|^skip-checks: *true'
+if git log -1 --format=%B HEAD | grep -qiE "$SKIP_PATTERN"; then
+  info "HEAD is marked to skip CI, which would also skip the release workflow."
+  info "Adding a release commit on top of it and tagging that instead."
+  git commit --quiet --allow-empty -m "chore(ide): release $VERSION"
+  git push --quiet origin master
+fi
+
 git tag -a "$TAG" -m "VS Code extension $VERSION"
 git push origin "$TAG"
 echo
