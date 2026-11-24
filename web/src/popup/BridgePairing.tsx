@@ -24,7 +24,8 @@ const STATE_COLORS: Record<BridgeConnectionState, string> = {
 // The VS Code extension is released separately; this popup is where users are
 // pointed to it, so they only see it once they have this (bridge-capable) version.
 const VSCODE_EXTENSION_RELEASES_URL =
-  "https://github.com/andressuarezmonk/netsuite-tool/releases?q=ide-v";
+  // (GitHub release search matches whole words; this phrase is in every VS Code release title)
+  "https://github.com/andressuarezmonk/netsuite-tool/releases?q=VS%20Code%20extension";
 
 const SMALL_BUTTON_STYLE = {
   padding: "5px 10px",
