@@ -1,35 +1,6 @@
-// All NS-specific values are derived at runtime from the page URL,
-// so the extension works for any NetSuite account without code changes.
+// Window-free constants. The NetSuite account details (origin, handler URL)
+// are not here — they live in services/connection.service.ts.
 
-// The content script runs on the NS time entry page, so window.location gives us:
-//   hostname: "3851137.app.netsuite.com"  -> account ID
-//   search:   "?script=2375&deploy=1..."  -> entry script ID
-//
-// The data handler script ID is stored in chrome.storage when the page loads
-// (set in index.tsx after reading it from the page source).
-
-export const getAccountId = () => window.location.hostname.split(".")[0];
-
-// The handler URL is built from values stored by the content script on first load.
-// Falls back to the convention of TARGET_SCRIPT - 2 if storage hasn't been set yet.
-export function getHandler(): string {
-  // Read from module-level cache set by setHandlerScriptId()
-  return _handler;
-}
-
-let _handler = buildDefaultHandler();
-
-function buildDefaultHandler(): string {
-  const params = new URLSearchParams(window.location.search);
-  const scriptId = parseInt(params.get("script") ?? "2375", 10);
-  const handlerScript = scriptId - 2; // convention: 2375 -> 2373
-  return `${window.location.origin}/app/site/hosting/scriptlet.nl?script=${handlerScript}&deploy=1`;
-}
-
-/** Call this once the actual handler script ID is known (read from page source). */
-export function setHandlerScriptId(scriptId: string): void {
-  _handler = `${window.location.origin}/app/site/hosting/scriptlet.nl?script=${scriptId}&deploy=1`;
-}
-
+/** Script ID of the slow NS time entry page this extension replaces. */
 export const TARGET_SCRIPT = "2375";
 export { DAYS, type DayKey } from "./days";

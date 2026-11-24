@@ -1,10 +1,8 @@
-import { ApiClient, BASE_URL, getHandlerParams } from "./apiClient.service";
+import { ApiClient, resolveHandlerRequest } from "./apiClient.service";
 import type { NSApprovalStatus, NSSubmittedStatus } from "../constants/nsEnums";
 
-export const FetchEndpoints = {
-  Initial: `${BASE_URL}?opType=fetch&requestType=init`,
-  Week: `${BASE_URL}?opType=fetch&requestType=time`,
-};
+const QUERY_INITIAL = "opType=fetch&requestType=init";
+const QUERY_WEEK = "opType=fetch&requestType=time";
 
 // ── Response types ────────────────────────────────────────────────────────────
 
@@ -41,13 +39,11 @@ export interface NSWeekResponse {
 // ── Requests ──────────────────────────────────────────────────────────────────
 
 export const fetchInitial = async (): Promise<NSInitialResponse> => {
-  const { scriptId, deployId } = getHandlerParams();
-  const response = await ApiClient.get<NSInitialResponse>(
-    FetchEndpoints.Initial,
-    {
-      params: { script: scriptId, deploy: deployId },
-    },
-  );
+  const { url, scriptId, deployId } =
+    await resolveHandlerRequest(QUERY_INITIAL);
+  const response = await ApiClient.get<NSInitialResponse>(url, {
+    params: { script: scriptId, deploy: deployId },
+  });
   return response.data;
 };
 
@@ -55,8 +51,8 @@ const fetchWeek = async (
   weekNS: string,
   employeeId: string,
 ): Promise<NSWeekResponse> => {
-  const { scriptId, deployId } = getHandlerParams();
-  const response = await ApiClient.get<NSWeekResponse>(FetchEndpoints.Week, {
+  const { url, scriptId, deployId } = await resolveHandlerRequest(QUERY_WEEK);
+  const response = await ApiClient.get<NSWeekResponse>(url, {
     params: {
       script: scriptId,
       deploy: deployId,

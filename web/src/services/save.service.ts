@@ -1,9 +1,7 @@
-import { ApiClient, BASE_URL, getHandlerParams } from "./apiClient.service";
+import { ApiClient, resolveHandlerRequest } from "./apiClient.service";
 import type { DayKey } from "@/utils/constants";
 
-export const SaveEndpoints = {
-  Row: `${BASE_URL}?opType=saveAll`,
-};
+const QUERY_SAVE_ROW = "opType=saveAll";
 
 // ── Request types ─────────────────────────────────────────────────────────────
 
@@ -44,9 +42,10 @@ export type NSSaveRowResponse = NSSaveRowResponseItem[];
 export const saveRow = async (
   block: NSSaveRowBlock,
 ): Promise<NSSaveRowResponse> => {
-  const { scriptId, deployId } = getHandlerParams();
+  const { url, scriptId, deployId } =
+    await resolveHandlerRequest(QUERY_SAVE_ROW);
   const response = await ApiClient.post<NSSaveRowResponse>(
-    SaveEndpoints.Row,
+    url,
     new URLSearchParams({
       script: scriptId,
       deploy: deployId,

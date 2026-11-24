@@ -47,6 +47,8 @@ import { CacheService } from "@/services/cache.service";
 ### Services (`src/services/`)
 Own all I/O — HTTP calls, chrome storage, localStorage, and domain operations that coordinate between multiple API calls. Services are plain async functions, no React.
 
+- `connection.service.ts` — the NetSuite account in use (`origin` + handler URL). Window-free: the page sets it synchronously from its URL (via `readConnectionFromPage()` in `utils/pageConnection.ts`, content-script only), other contexts load the persisted copy from `chrome.storage`.
+- `apiClient.service.ts` — shared axios instance with no module-level URL; `resolveHandlerRequest(query)` resolves the endpoint per request. A response interceptor throws `SessionExpiredError` when NS answers with its login page (HTTP 200 + `text/html`, so the status code can't be trusted).
 - `fetch.service.ts` / `save.service.ts` / `delete.service.ts` — raw HTTP transport
 - `week.service.ts` — fetches 3 parallel NS week windows and merges them
 - `row.service.ts` — builds save/delete payloads and calls the transport layer
@@ -93,7 +95,7 @@ Colour tokens in `_variables.scss` are `var(--ft-*)` references, **not** literal
 - `Footer` — calls `VersionService.check()` on mount; if `hasUpdate` is true, renders an update banner above the footer text. Also hosts the light/dark toggle (via `useTheme`). Self-contained — no store state involved.
 
 ### Background service worker (`src/background.ts`)
-Fires the opt-in hours reminder via `chrome.alarms` + `chrome.notifications`. It has no `window`, so it may only import window-free modules: use `@/utils/days` (not `@/utils/constants`, which reads `window.location` on load), `@/utils/dates`, `@/utils/reminder` and `@/services/reminder.service`. Never import the HTTP services or `apiClient.service` from it.
+Fires the opt-in hours reminder via `chrome.alarms` + `chrome.notifications`. It has no `window`, so it may only import window-free modules: use `@/utils/days`, `@/utils/dates`, `@/utils/reminder` and `@/services/reminder.service`. Never import the HTTP services or `apiClient.service` from it.
 
 ### Mocks (`src/mocks/`)
 Development stubs for visual testing. Never imported in production code paths.
@@ -114,7 +116,7 @@ The NS server runs on US/Pacific time. The extension is used from Buenos Aires (
 All three responses are merged before returning `WeekData`.
 
 ### Handler URL
-The NS data handler URL is dynamic — built at runtime from `window.location` since the account ID is part of the hostname. `getHandlerParams()` in `apiClient.service.ts` extracts `script` and `deploy` query params from the current handler URL.
+The NS data handler URL is dynamic — the account ID is part of the hostname. `readConnectionFromPage()` builds it from `window.location` (and the inner iframe's script ID) and hands it to `ConnectionService`; `resolveHandlerRequest()` in `apiClient.service.ts` reads it back and extracts the `script` and `deploy` params. Nothing outside `utils/pageConnection.ts` and `index.tsx` should touch `window.location` for this.
 
 ## Manifest and versioning
 
