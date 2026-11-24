@@ -3,6 +3,13 @@
 const REPOSITORY_PATH = "andressuarezmonk/netsuite-tool";
 export const REPOSITORY_URL = `https://github.com/${REPOSITORY_PATH}`;
 
+/**
+ * Shown next to the view title and as a note under the content while the
+ * extension is in beta. Set to "" once it is stable and the label disappears.
+ */
+export const STAGE_LABEL = "beta";
+export const ISSUES_URL = `${REPOSITORY_URL}/issues/new`;
+
 /** The Chrome extension's releases (the repository's "latest" release). */
 export const WEB_RELEASES_URL = `${REPOSITORY_URL}/releases/latest`;
 /** This extension's releases (tags `ide-vX.Y.Z`). */

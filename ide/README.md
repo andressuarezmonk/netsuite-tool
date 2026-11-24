@@ -48,6 +48,15 @@ menu in the view title) throws the token away.
   version check — your local Chrome build still carries the last *released*
   version number.
 
+### Beta label
+
+While in beta the extension shows "beta" next to the view title, a quiet note
+with a "Report an issue" link under the content, the VS Code "Preview" badge
+(`"preview": true` in `package.json`), and a beta line in `0.x` release notes.
+When it's stable: set `STAGE_LABEL` to `""` in `src/constants.ts`, remove
+`"preview"` from `package.json`, and release `1.0.0` (the notes script only adds
+the beta line for `0.x`).
+
 ### Releasing
 
 Releases are independent of the Chrome extension (see the root README):

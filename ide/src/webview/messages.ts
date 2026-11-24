@@ -16,7 +16,8 @@ export type WebviewCommand =
   | "refresh"
   | "openSettings"
   | "openWebReleases"
-  | "openIdeReleases";
+  | "openIdeReleases"
+  | "reportIssue";
 
 export type WebviewToExtension =
   | { type: "ready" }

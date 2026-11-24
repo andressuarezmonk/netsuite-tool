@@ -23,6 +23,11 @@ MINIMUM=$(git show "$TAG:ide/src/constants.ts" \
 
 echo "VS Code extension $VERSION"
 echo
+# 0.x versions are betas
+if [[ "${VERSION%%.*}" == "0" ]]; then
+  echo "> **Beta:** this extension is in beta, so you may run into rough edges. Please report problems by opening an issue."
+  echo
+fi
 echo "Requires the NetSuite Fast Time Tracker Chrome extension v$MINIMUM or newer."
 echo "Install: download the .vsix below, then in VS Code run \"Extensions: Install from VSIX…\"."
 echo

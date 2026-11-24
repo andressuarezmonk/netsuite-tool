@@ -3,7 +3,7 @@ import { randomBytes } from "node:crypto";
 import type { BridgeDayKey } from "@protocol";
 import { reportOperationError } from "@/commands/errors";
 import { DAY_KEYS, MAX_HOURS_PER_DAY } from "@/model/weekModel";
-import { MIN_CHROME_EXTENSION_VERSION } from "@/constants";
+import { MIN_CHROME_EXTENSION_VERSION, STAGE_LABEL } from "@/constants";
 import { buildWeekViewModel, type WeekViewModel } from "@/model/weekViewModel";
 import type { WeekStore } from "@/state/weekStore";
 import { todayISO } from "@/utils/dates";
@@ -29,6 +29,7 @@ const WEBVIEW_COMMANDS: readonly WebviewCommand[] = [
   "openSettings",
   "openWebReleases",
   "openIdeReleases",
+  "reportIssue",
 ];
 const DELETE_ACTION = "Delete";
 
@@ -115,11 +116,14 @@ export class WeekWebviewController
       todayISO: todayISO(),
       hasWaitedLong: this.store.hasWaitedLong,
       minimumChromeVersion: MIN_CHROME_EXTENSION_VERSION,
+      stageLabel: STAGE_LABEL,
     });
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
     this.sidebarView = view;
+    // Shown next to the title, so the beta status is visible even when collapsed
+    view.description = STAGE_LABEL || undefined;
     this.attach(view.webview);
     view.onDidDispose(() => {
       this.attachedWebviews.delete(view.webview);
@@ -135,7 +139,7 @@ export class WeekWebviewController
     }
     const panel = vscode.window.createWebviewPanel(
       PANEL_VIEW_TYPE,
-      "NetSuite Time",
+      STAGE_LABEL ? `NetSuite Time (${STAGE_LABEL})` : "NetSuite Time",
       vscode.ViewColumn.Active,
       { retainContextWhenHidden: true },
     );

@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import type { PairingStore } from "@/pairing";
 import { buildPairingCode } from "@/pairing";
 import type { WeekStore } from "@/state/weekStore";
-import { IDE_RELEASES_URL, WEB_RELEASES_URL } from "@/constants";
+import { IDE_RELEASES_URL, ISSUES_URL, WEB_RELEASES_URL } from "@/constants";
 import { logHours } from "./hoursCommands";
 
 const RESET_ACTION = "Reset";
@@ -72,6 +72,9 @@ export function registerCommands(
   );
   register("netsuiteTracker.openIdeReleases", () =>
     vscode.env.openExternal(vscode.Uri.parse(IDE_RELEASES_URL)),
+  );
+  register("netsuiteTracker.reportIssue", () =>
+    vscode.env.openExternal(vscode.Uri.parse(ISSUES_URL)),
   );
   register("netsuiteTracker.checkForUpdates", () => checkForUpdates(true));
 

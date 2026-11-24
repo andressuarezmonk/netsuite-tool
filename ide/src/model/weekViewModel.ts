@@ -87,6 +87,8 @@ export interface WeekViewModel {
   hasWaitedLong: boolean;
   /** The oldest Chrome extension this version works with, for the help text. */
   minimumChromeVersion: string;
+  /** "beta" while the extension is in beta, "" once stable. */
+  stageLabel: string;
   days: DayColumn[];
   rows: RowModel[];
   projects: NamedItem[];
@@ -227,6 +229,7 @@ export interface WeekViewModelInput {
   todayISO: string;
   hasWaitedLong?: boolean;
   minimumChromeVersion?: string;
+  stageLabel?: string;
 }
 
 const EMPTY_PROGRESS: ProgressModel = {
@@ -248,6 +251,7 @@ export function buildWeekViewModel(input: WeekViewModelInput): WeekViewModel {
     isCurrentWeek: mondayISO === getMondayISO(todayISO),
     hasWaitedLong: input.hasWaitedLong ?? false,
     minimumChromeVersion: input.minimumChromeVersion ?? "",
+    stageLabel: input.stageLabel ?? "",
   };
 
   if (!week || viewState !== "ready") {

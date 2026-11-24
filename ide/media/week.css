@@ -427,6 +427,42 @@ button:disabled {
   gap: 6px;
 }
 
+/* ── Beta note ───────────────────────────────────────────────────────────── */
+
+.stage-note {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--row-border);
+  color: var(--muted);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.stage-badge {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+}
+
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground, var(--blue));
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-button:hover {
+  color: var(--vscode-textLink-activeForeground, var(--blue));
+}
+
 /* ── Wide layout: the web UI's one-line rows ─────────────────────────────── */
 
 @container (min-width: 600px) {

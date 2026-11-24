@@ -395,10 +395,22 @@ function restoreFocus(snapshot: FocusSnapshot | null): void {
   input.setSelectionRange(snapshot.selectionStart, snapshot.selectionEnd);
 }
 
+/** A quiet note under the content while the extension is in beta. */
+function renderStageNote(current: WeekViewModel | null): string {
+  if (!current?.stageLabel) return "";
+  const label = escapeHtml(current.stageLabel);
+  return `<div class="stage-note">
+    <span class="stage-badge">${label}</span>
+    This extension is in ${label}: you may run into rough edges.
+    <button class="link-button" data-action="command" data-command="reportIssue">Report an issue</button>
+  </div>`;
+}
+
 function render(): void {
   const focusSnapshot = captureFocus();
-  app.innerHTML =
+  const content =
     model?.state === "ready" ? renderReady(model) : renderNotReady(model);
+  app.innerHTML = content + renderStageNote(model);
   // Inline style attributes are blocked by the webview's CSP; setting the
   // width through the CSSOM is allowed.
   app.querySelectorAll<HTMLElement>("[data-percent]").forEach((element) => {

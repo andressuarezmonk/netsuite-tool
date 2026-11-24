@@ -102,6 +102,11 @@
         "command": "netsuiteTracker.checkForUpdates",
         "title": "Check for Updates",
         "category": "NetSuite Tracker"
+      },
+      {
+        "command": "netsuiteTracker.reportIssue",
+        "title": "Report an Issue",
+        "category": "NetSuite Tracker"
       }
     ],
     "menus": {
@@ -140,6 +145,11 @@
           "command": "netsuiteTracker.checkForUpdates",
           "when": "view == netsuiteTracker.week",
           "group": "2_help@1"
+        },
+        {
+          "command": "netsuiteTracker.reportIssue",
+          "when": "view == netsuiteTracker.week",
+          "group": "2_help@2"
         }
       ]
     },
@@ -180,5 +190,6 @@
     "url": "https://github.com/andressuarezmonk/netsuite-tool.git",
     "directory": "ide"
   },
-  "homepage": "https://github.com/andressuarezmonk/netsuite-tool#readme"
+  "homepage": "https://github.com/andressuarezmonk/netsuite-tool#readme",
+  "preview": true
 }
