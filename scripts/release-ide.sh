@@ -4,7 +4,8 @@
 # extension's release flow (deploy.sh), but refuses to run before the Chrome
 # extension it needs has been released.
 #
-# Run via: npm run release:ide -- 0.1.0   (from ide/)   or   bash scripts/release-ide.sh 0.1.0
+# Normally run through `npm run deploy` (see deploy.sh), which plans everything
+# first. Standalone: bash scripts/release-ide.sh 0.1.0 [--yes]
 
 set -euo pipefail
 
@@ -14,8 +15,10 @@ error() { echo "ERROR: $*" >&2; }
 cd "$(git rev-parse --show-toplevel)"
 
 VERSION="${1:-}"
+ASSUME_YES=0
+[[ "${2:-}" == "--yes" ]] && ASSUME_YES=1
 if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  error "Give the version to release, e.g.  npm run release:ide -- 0.1.0"
+  error "Give the version to release, e.g.  bash scripts/release-ide.sh 0.1.0"
   exit 1
 fi
 TAG="ide-v$VERSION"
@@ -56,10 +59,12 @@ info "Changes in this release (${PREVIOUS_TAG:-first release}..HEAD, ide/ and pr
 git log --no-merges --format='  - %s (%h)' ${PREVIOUS_TAG:+$PREVIOUS_TAG..}HEAD -- ide protocol
 echo
 info "About to push tag $TAG. This publishes a GitHub release with the .vsix."
-read -r -p "Continue? [y/N] " confirm
-if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
-  info "Aborted. No changes made."
-  exit 1
+if [[ "$ASSUME_YES" != "1" ]]; then
+  read -r -p "Continue? [y/N] " confirm
+  if [[ ! "$confirm" =~ ^[Yy]$ ]]; then
+    info "Aborted. No changes made."
+    exit 1
+  fi
 fi
 
 git tag -a "$TAG" -m "VS Code extension $VERSION"

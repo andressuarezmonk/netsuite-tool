@@ -1,0 +1,11 @@
+{
+  "name": "netsuite-tool",
+  "private": true,
+  "description": "Repo-level commands. The packages live in web/ (Chrome extension) and ide/ (VS Code extension).",
+  "scripts": {
+    "deploy": "bash scripts/deploy.sh",
+    "deploy:web": "bash scripts/deploy.sh web",
+    "deploy:ide": "bash scripts/deploy.sh ide",
+    "deploy:both": "bash scripts/deploy.sh both"
+  }
+}

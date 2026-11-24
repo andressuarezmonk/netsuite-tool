@@ -132,6 +132,8 @@ The NS data handler URL is dynamic — the account ID is part of the hostname. `
 
 ## Releases and commit scopes
 
+- **Deploy with `npm run deploy` in `web/` or `ide/`, or `npm run deploy[:web|:ide|:both]` at the repo root** (all call `scripts/deploy.sh`; see the root README "Deploying"). Never hand-merge to `master` or hand-push tags.
+
 - The Chrome extension is released by semantic-release from `master` (tags `vX.Y.Z`); the VS Code extension is released separately by pushing `ide-vX.Y.Z` (see the root README). They share one repository, so:
 - **A commit that only touches `ide/` must use the `(ide)` scope** (`feat(ide): …`). `web/.releaserc.json` ignores `(ide)` commits; an unscoped `feat:`/`fix:` triggers a Chrome release even if it only changed `ide/`.
 - **Never let a VS Code release become the repository's "latest" release.** Installed Chrome extensions read `releases/latest` (old versions) or the newest `vX.Y.Z` release (`VersionService`, new versions). `.github/workflows/ide-release.yml` publishes with `--latest=false` and `scripts/ensure-web-latest.sh` verifies it.

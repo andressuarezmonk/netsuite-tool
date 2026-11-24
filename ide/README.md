@@ -63,13 +63,16 @@ Releases are independent of the Chrome extension (see the root README):
 
 ```bash
 cd ide
-npm run release:ide -- 0.1.0     # from master, clean and in sync with origin
+npm run deploy            # or, from the repo root: npm run deploy:ide
 ```
 
-It refuses unless the Chrome extension this version needs is already released,
-shows the changes, asks for confirmation, then pushes the tag `ide-v0.1.0`. The
-"Release VS Code extension" workflow builds and publishes the `.vsix` (never as
-"latest"). The version in `package.json` is a placeholder: CI stamps it from the tag.
+From `develop` (clean and pushed). It suggests the next version, shows the
+changes, refuses unless the Chrome extension this version needs is released (or
+about to be), asks once, brings `master` up to date and pushes the tag
+`ide-vX.Y.Z`. The "Release VS Code extension" workflow then builds and publishes
+the `.vsix` (never as "latest"). To release Chrome and VS Code together use
+`npm run deploy:both` from the repo root. The version in `package.json` is a
+placeholder: CI stamps it from the tag.
 
 Commits that only touch `ide/` must use the `(ide)` scope.
 

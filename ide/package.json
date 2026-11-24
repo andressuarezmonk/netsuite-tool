@@ -173,7 +173,7 @@
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\"",
     "package": "vsce package --no-dependencies --skip-license",
-    "release:ide": "bash ../scripts/release-ide.sh"
+    "deploy": "bash ../scripts/deploy.sh ide"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",
