@@ -1,0 +1,36 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "IDE extension (mock data)",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/ide"
+      ],
+      "env": {
+        "NETSUITE_TRACKER_MOCK": "1",
+        "NETSUITE_TRACKER_DEV": "1"
+      },
+      "outFiles": [
+        "${workspaceFolder}/ide/dist/**/*.js"
+      ],
+      "preLaunchTask": "ide: build"
+    },
+    {
+      "name": "IDE extension",
+      "type": "extensionHost",
+      "request": "launch",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/ide"
+      ],
+      "outFiles": [
+        "${workspaceFolder}/ide/dist/**/*.js"
+      ],
+      "preLaunchTask": "ide: build",
+      "env": {
+        "NETSUITE_TRACKER_DEV": "1"
+      }
+    }
+  ]
+}

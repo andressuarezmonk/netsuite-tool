@@ -1,0 +1,501 @@
+/* Week grid. Colours come from VS Code theme variables so it follows the
+   user's theme (light, dark, high contrast). Layout is a CSS grid whose shape
+   depends on the width of the view, not the window:
+   - narrow (sidebar): each task is two lines — name/total, then 7 day cells;
+   - wide (editor tab or widened sidebar): the web UI's single-line row. */
+
+:root {
+  --row-border: var(--vscode-widget-border, var(--vscode-panel-border, rgba(128, 128, 128, 0.25)));
+  --strong-border: var(--vscode-panel-border, rgba(128, 128, 128, 0.45));
+  --muted: var(--vscode-descriptionForeground, rgba(128, 128, 128, 0.9));
+  --blue: var(--vscode-charts-blue, #3794ff);
+  --green: var(--vscode-testing-iconPassed, #73c991);
+  --amber: var(--vscode-editorWarning-foreground, #cca700);
+  --red: var(--vscode-charts-red, #f14c4c);
+  --today-bg: color-mix(in srgb, var(--blue) 13%, transparent);
+  --holiday-bg: color-mix(in srgb, var(--red) 11%, transparent);
+  --cell-radius: 4px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 8px 10px 16px;
+  font-family: var(--vscode-font-family);
+  font-size: var(--vscode-font-size);
+  color: var(--vscode-foreground);
+}
+
+.app {
+  container-type: inline-size;
+  min-width: 0;
+}
+
+button,
+select,
+input {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+
+button {
+  border: 1px solid transparent;
+  border-radius: 2px;
+  padding: 3px 9px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+button:focus-visible,
+select:focus-visible {
+  outline: 1px solid var(--vscode-focusBorder);
+  outline-offset: 1px;
+}
+
+button.primary {
+  color: var(--vscode-button-foreground);
+  background: var(--vscode-button-background);
+}
+button.primary:hover:not(:disabled) {
+  background: var(--vscode-button-hoverBackground);
+}
+
+button.secondary {
+  color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+  background: var(--vscode-button-secondaryBackground, rgba(128, 128, 128, 0.2));
+}
+button.secondary:hover:not(:disabled) {
+  background: var(--vscode-button-secondaryHoverBackground, rgba(128, 128, 128, 0.3));
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-button {
+  padding: 0 6px;
+  font-size: 15px;
+  line-height: 1.2;
+  color: var(--muted);
+  background: none;
+}
+.icon-button:hover:not(:disabled) {
+  color: var(--red);
+  background: var(--holiday-bg);
+}
+
+/* ── Week navigation ─────────────────────────────────────────────────────── */
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nav .range {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Weekly progress ─────────────────────────────────────────────────────── */
+
+.progress {
+  margin-top: 10px;
+}
+
+.progress-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+}
+
+.progress .hours {
+  font-weight: 700;
+}
+
+.progress .remaining {
+  color: var(--muted);
+}
+.progress .remaining.met {
+  color: var(--green);
+  font-weight: 600;
+}
+.progress .remaining.over {
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.holiday-note {
+  color: var(--red);
+  font-size: 0.92em;
+  cursor: help;
+}
+
+.saving-note {
+  margin-left: auto;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.track {
+  height: 6px;
+  margin-top: 5px;
+  border-radius: 3px;
+  background: var(--row-border);
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--vscode-progressBar-background, var(--blue));
+  transition: width 0.25s ease;
+}
+.bar.met {
+  background: var(--green);
+}
+.bar.over {
+  background: var(--blue);
+}
+
+/* ── The grid ────────────────────────────────────────────────────────────── */
+
+.grid {
+  margin-top: 10px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-areas:
+    "name name name name name total del"
+    "d0 d1 d2 d3 d4 d5 d6";
+  align-items: center;
+  column-gap: 0;
+  row-gap: 3px;
+  padding: 6px 0 7px;
+  border-bottom: 1px solid var(--row-border);
+}
+
+.row:not(.head):not(.totals):hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.row > .name {
+  grid-area: name;
+  min-width: 0;
+  padding: 0 2px;
+}
+.row > .total {
+  grid-area: total;
+  text-align: right;
+  font-weight: 600;
+  padding-right: 2px;
+}
+.row > .del {
+  grid-area: del;
+  text-align: right;
+}
+
+.d0 { grid-area: d0; }
+.d1 { grid-area: d1; }
+.d2 { grid-area: d2; }
+.d3 { grid-area: d3; }
+.d4 { grid-area: d4; }
+.d5 { grid-area: d5; }
+.d6 { grid-area: d6; }
+
+.name .project,
+.name .task {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.name .project {
+  font-weight: 600;
+}
+.name .task {
+  color: var(--muted);
+  font-size: 0.95em;
+}
+
+/* Column header */
+.row.head {
+  grid-template-areas: "d0 d1 d2 d3 d4 d5 d6";
+  padding: 2px 0 4px;
+  border-bottom: 2px solid var(--strong-border);
+}
+.row.head > .name,
+.row.head > .total,
+.row.head > .del {
+  display: none;
+}
+
+.day-head {
+  text-align: center;
+  padding: 3px 0;
+  border-radius: 0;
+  border-radius: var(--cell-radius);
+  font-weight: 700;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+  min-width: 0;
+}
+.day-head .weekday,
+.day-head .date,
+.day-head .holiday-name {
+  display: block;
+}
+.day-head .date {
+  font-weight: 400;
+  font-size: 0.9em;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.day-head .holiday-name {
+  color: var(--red);
+  font-size: 0.78em;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.day-head.today {
+  color: var(--vscode-foreground);
+}
+
+.day,
+.day-total {
+  min-width: 0;
+  text-align: center;
+}
+.day {
+  padding: 2px 2px;
+}
+.today {
+  background: var(--today-bg);
+}
+.holiday {
+  background: var(--holiday-bg);
+}
+.today.holiday {
+  background: linear-gradient(var(--today-bg), var(--today-bg)), var(--holiday-bg);
+}
+.weekend:not(.today):not(.holiday) {
+  opacity: 0.8;
+}
+
+/* Cells */
+.hours-input {
+  width: 100%;
+  min-width: 0;
+  padding: 3px 0;
+  text-align: center;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--row-border));
+  border-radius: var(--cell-radius);
+  transition: border-color 0.12s, opacity 0.12s;
+}
+.hours-input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+.hours-input.has-value {
+  background: color-mix(in srgb, var(--blue) 9%, var(--vscode-input-background));
+  border-color: color-mix(in srgb, var(--blue) 40%, var(--row-border));
+}
+.hours-input.approved {
+  color: var(--green);
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+  cursor: not-allowed;
+}
+.hours-input.submitted {
+  color: var(--blue);
+  background: color-mix(in srgb, var(--blue) 14%, transparent);
+  border-color: color-mix(in srgb, var(--blue) 45%, transparent);
+  cursor: not-allowed;
+}
+.hours-input.locked {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+.hours-input.saving {
+  opacity: 0.55;
+}
+.hours-input.invalid {
+  border-color: var(--red);
+  animation: shake 0.25s;
+}
+
+@keyframes shake {
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+/* Totals row */
+.row.totals {
+  border-top: 2px solid var(--strong-border);
+  border-bottom: none;
+  font-weight: 700;
+}
+.row.totals > .name {
+  color: var(--muted);
+  font-size: 0.85em;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.day-total {
+  padding: 4px 0;
+  min-height: 1.9em; /* keeps the column band unbroken when the total is empty */
+}
+.day-total.under {
+  color: var(--amber);
+}
+.day-total.over {
+  color: var(--blue);
+}
+
+.empty {
+  padding: 18px 8px;
+  text-align: center;
+  color: var(--muted);
+  border-bottom: 1px solid var(--row-border);
+}
+
+/* ── Add row ─────────────────────────────────────────────────────────────── */
+
+.add-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.add-bar select {
+  flex: 1 1 130px;
+  min-width: 0;
+  padding: 3px 4px;
+  color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
+  background: var(--vscode-dropdown-background, var(--vscode-input-background));
+  border: 1px solid var(--vscode-dropdown-border, var(--row-border));
+  border-radius: 2px;
+}
+.add-bar select:disabled {
+  opacity: 0.5;
+}
+
+/* ── Message cards (not paired, waiting, errors…) ────────────────────────── */
+
+.state-card {
+  padding: 8px 2px;
+}
+.state-card h2 {
+  margin: 4px 0 8px;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+.state-card p {
+  margin: 0 0 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.state-card .loading {
+  margin: 0;
+}
+.state-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* ── Beta note ───────────────────────────────────────────────────────────── */
+
+.stage-note {
+  margin-top: 16px;
+  padding-top: 8px;
+  border-top: 1px solid var(--row-border);
+  color: var(--muted);
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.stage-badge {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+}
+
+.link-button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--vscode-textLink-foreground, var(--blue));
+  text-decoration: underline;
+  cursor: pointer;
+}
+.link-button:hover {
+  color: var(--vscode-textLink-activeForeground, var(--blue));
+}
+
+/* ── Wide layout: the web UI's one-line rows ─────────────────────────────── */
+
+@container (min-width: 600px) {
+  .row {
+    grid-template-columns: minmax(150px, 1.7fr) repeat(7, minmax(54px, 1fr)) 64px 28px;
+    grid-template-areas: "name d0 d1 d2 d3 d4 d5 d6 total del";
+    column-gap: 0;
+    padding: 3px 0;
+  }
+  .row.head {
+    grid-template-areas: "name d0 d1 d2 d3 d4 d5 d6 total del";
+    padding: 4px 0;
+  }
+  .row.head > .name,
+  .row.head > .total {
+    display: block;
+    font-weight: 700;
+    font-size: 0.85em;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: var(--muted);
+  }
+  .row.head > .total {
+    text-align: center;
+  }
+  .row > .total {
+    text-align: center;
+    padding-right: 0;
+  }
+  .hours-input {
+    padding: 4px 0;
+  }
+  .add-bar select {
+    flex: 0 1 220px;
+  }
+}

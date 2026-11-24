@@ -1,0 +1,12 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ide: build",
+      "type": "shell",
+      "command": "npm --prefix ide run build",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

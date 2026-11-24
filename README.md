@@ -21,9 +21,21 @@ The extension checks for updates automatically on each page load. When a new ver
 
 Click **download** to go to the releases page, grab the new `dist.zip`, extract it, and reload the extension in `chrome://extensions` using the refresh icon. The whole process takes about 30 seconds.
 
+## Repository layout
+
+| Folder | What it is |
+|---|---|
+| [`web/`](web) | The Chrome extension (React + Vite). All build, lint and release tooling lives here. |
+| [`ide/`](ide) | The VS Code extension: activity bar week view, log/edit hours. The real data link to Chrome is not built yet. |
+| [`protocol/`](protocol) | The wire protocol shared by both extensions. |
+| `scripts/` | Repo-level scripts (`deploy.sh`). |
+
+The commands below are run from `web/`.
+
 ## Setup (for development)
 
 ```bash
+cd web
 npm install
 ```
 
@@ -54,6 +66,8 @@ npm run build
 - Caches week data in `chrome.storage.local` for instant loading on repeat visits (7-day TTL)
 
 ## Project structure
+
+Paths below are relative to `web/`.
 
 ```
 src/
@@ -123,11 +137,13 @@ src/
 
 ## Release pipeline
 
+The workflow runs inside `web/` (`working-directory: web`), so `package.json`, `.releaserc.json` and `dist.zip` all live there.
+
 Pushing a `feat:` or `fix:` commit to `main`/`master` triggers the GitHub Actions release workflow:
 
 1. `semantic-release` analyzes commit messages, bumps `package.json`, tags the release, and creates a GitHub Release
 2. The build runs after the version bump so `dist/manifest.json` picks up the new version
-3. `dist.zip` is uploaded to the release as the installable artifact
+3. `dist.zip` is uploaded to the release as the installable artifact — **only when a release was actually created**. A push to `master` with nothing releasable (only `chore:`/`refactor:`/`(ide)` commits) still lints and builds, but never touches a published release's zip
 
 The extension manifest version is read directly from `package.json` at build time (`vite.config.ts`), so it always matches the release tag.
 
@@ -165,6 +181,46 @@ Pushing to `master` triggers the release workflow described above, which also me
 git checkout develop
 git pull origin develop
 ```
+
+## Deploying
+
+One command, from `develop` (clean and pushed). Run it inside the package, or from the repo root:
+
+| What | Inside the package | From the repo root |
+|---|---|---|
+| Chrome extension | `cd web && npm run deploy` | `npm run deploy:web` |
+| VS Code extension | `cd ide && npm run deploy` | `npm run deploy:ide` |
+| Both (Chrome first) | — | `npm run deploy:both` |
+| Ask me | — | `npm run deploy` |
+
+Extra arguments go after `--`: a version for the VS Code release (`npm run deploy:ide -- 0.2.0`) and `-y` to skip the prompts.
+
+Each deploy first **shows a plan and asks once, before anything is pushed**:
+
+- **web** predicts the Chrome release from the commits since the last one (`feat` → minor, `fix`/`perf` → patch, `BREAKING CHANGE` → major; `(ide)`-scoped commits never count) and warns if nothing is releasable. Then it merges `develop` into `master`, which starts the release workflow.
+- **ide** suggests the next VS Code version (you can type another), lists the `ide/` and `protocol/` changes, makes sure `master` has `develop`, and tags `ide-vX.Y.Z`. It **refuses** if the merge would also release Chrome extension changes (that's `both`), if there is nothing to release, or if the Chrome extension version it needs isn't released and isn't about to be.
+- **both** does web, **waits until the Chrome release exists** (and, with the GitHub CLI, until its workflow finished successfully), then does ide. If the Chrome release never appears or its workflow fails, no VS Code release is published.
+
+After a deploy, `develop` is already fast-forwarded to `master`; run `git pull origin develop` once CI has pushed its version-bump commit.
+
+## VS Code extension releases
+
+The VS Code extension ([`ide/`](ide)) is released **independently** of the Chrome extension, from the same repository:
+
+| | Chrome extension | VS Code extension |
+|---|---|---|
+| Tag | `vX.Y.Z` | `ide-vX.Y.Z` |
+| Triggered by | merging to `master` (semantic-release, see above) | pushing the tag `ide-vX.Y.Z` |
+| Artifact | `dist.zip` | `.vsix` |
+| Marked "latest"? | yes | **never** (`--latest=false`) |
+
+Why "never latest": every installed Chrome extension reads the repository's `releases/latest` to show its update banner, so that must always be a Chrome release. The VS Code release workflow marks its release as not-latest and then verifies (and repairs) that invariant.
+
+**Commit scopes decide which release a commit can trigger.** A change that only touches the VS Code extension must be committed with the `(ide)` scope (`feat(ide): …`, `fix(ide): …`); the Chrome release config ignores those. An unscoped `feat:`/`fix:` always releases the Chrome extension.
+
+**Order: Chrome first, always.** The VS Code extension declares the oldest Chrome extension it works with (`MIN_CHROME_EXTENSION_VERSION` in `ide/src/constants.ts`). `scripts/release-ide.sh` and the release workflow both refuse to publish a VS Code release until a Chrome release at least that new exists, and at runtime the extension turns away older Chrome extensions with an explanation. Raise the constant whenever the VS Code extension starts needing something newer in Chrome — and for a breaking protocol change, release Chrome first.
+
+Users find the VS Code extension through a link in the Chrome extension's popup, so they only see it once they have a bridge-capable Chrome extension.
 
 ## Architecture
 

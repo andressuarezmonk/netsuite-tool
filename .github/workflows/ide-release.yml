@@ -1,0 +1,95 @@
+name: Release VS Code extension
+
+# Publishes the VS Code extension when a tag like `ide-v0.2.0` is pushed
+# (see scripts/release-ide.sh). This is a SEPARATE release from the Chrome
+# extension's, and it is never marked as the repository's "latest" release:
+# every installed Chrome extension reads /releases/latest to detect updates and
+# must keep seeing its own releases there.
+
+on:
+  push:
+    tags: ["ide-v*"]
+
+concurrency:
+  group: ide-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # tags and history are needed for the checks and notes
+
+      - name: Read the version from the tag
+        run: |
+          VERSION="${GITHUB_REF_NAME#ide-v}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME is not of the form ide-vX.Y.Z"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      # Only commits that are on master may be released
+      - name: Check the tag is on master
+        run: |
+          git fetch origin master
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+            echo "::error::$GITHUB_REF_NAME is not on master."
+            exit 1
+          fi
+
+      # The Chrome extension this version needs must already be released
+      - name: Check the Chrome extension it needs is released
+        run: bash scripts/check-ide-release.sh "$GITHUB_REF_NAME"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install
+        working-directory: ide
+        run: npm ci
+
+      - name: Type-check
+        working-directory: ide
+        run: npm run typecheck
+
+      - name: Check formatting
+        working-directory: ide
+        run: npm run format:check
+
+      # The version in package.json is a placeholder: the tag is the source of truth
+      - name: Stamp the version
+        working-directory: ide
+        run: npm version "$VERSION" --no-git-tag-version --allow-same-version
+
+      - name: Build
+        working-directory: ide
+        run: npm run build
+
+      - name: Package
+        working-directory: ide
+        run: npm run package -- --out "../netsuite-fast-tracker-vscode-$VERSION.vsix"
+
+      - name: Write release notes
+        run: bash scripts/ide-release-notes.sh "$GITHUB_REF_NAME" > release-notes.md
+
+      # --latest=false is essential, see the comment at the top of this file
+      - name: Publish the release
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            "netsuite-fast-tracker-vscode-$VERSION.vsix" \
+            --verify-tag \
+            --title "VS Code extension $VERSION" \
+            --notes-file release-notes.md \
+            --latest=false
+
+      - name: Make sure "latest" is still a Chrome extension release
+        run: bash scripts/ensure-web-latest.sh "$GITHUB_REF_NAME"
