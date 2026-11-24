@@ -12,8 +12,12 @@ export const ISSUES_URL = `${REPOSITORY_URL}/issues/new`;
 
 /** The Chrome extension's releases (the repository's "latest" release). */
 export const WEB_RELEASES_URL = `${REPOSITORY_URL}/releases/latest`;
-/** This extension's releases (tags `ide-vX.Y.Z`). */
-export const IDE_RELEASES_URL = `${REPOSITORY_URL}/releases?q=ide-v`;
+/**
+ * This extension's releases (tags `ide-vX.Y.Z`). GitHub's release search
+ * matches whole words, so a partial tag like "ide-v" finds nothing; the phrase
+ * below is in the title of every VS Code release (see ide-release.yml).
+ */
+export const IDE_RELEASES_URL = `${REPOSITORY_URL}/releases?q=VS%20Code%20extension`;
 export const RELEASES_API_URL = `https://api.github.com/repos/${REPOSITORY_PATH}/releases?per_page=30`;
 
 /**
