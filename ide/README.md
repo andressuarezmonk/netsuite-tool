@@ -14,10 +14,32 @@ localhost WebSocket (see [`../protocol`](../protocol)).
 | "Open Week in Editor" — the same grid as a wide editor tab | done |
 | Log hours quick-pick flow, status bar item | done |
 | "Pair with Chrome" command (generates the pairing code) | done |
-| WebSocket server + handshake (the real data source) | **not built yet** |
+| WebSocket server + mutual-auth handshake, real data from Chrome | done |
+| Reset Pairing, port-in-use handling | done |
 | Copy previous week | not built (the web UI has it) |
 
-Until the server exists, the extension shows "Waiting for Chrome…" outside mock mode.
+## Use it with your real hours
+
+1. Build and (re)load the Chrome extension: `npm --prefix web run build`, then
+   refresh it in `chrome://extensions`. Open your NetSuite time entry page once
+   so the extension learns your account.
+2. Press **F5** at the repo root and pick **"IDE extension"** (not the mock one).
+3. In the sidebar click **Pair with Chrome** — a pairing code is copied.
+4. Click the Chrome extension's toolbar icon, paste the code into its **VS Code**
+   section and press **Pair**. The sidebar fills with your week.
+
+Chrome must be running and logged in to NetSuite, but no NetSuite tab needs to be
+open. Only one browser can be connected at a time. **Reset Pairing…** (the `…`
+menu in the view title) throws the token away.
+
+### Security model (server side)
+
+Anything on the machine can try to connect to the port, so the server never
+trusts a client until it has proved it knows the pairing token (an HMAC
+handshake; the token is never sent). It also listens on 127.0.0.1 only, refuses
+browser origins that aren't an extension, and has handshake/idle timeouts, a
+payload cap and a cap on unauthenticated sockets. Don't weaken these without
+re-running the attack cases (see `src/bridge/server.ts`).
 
 ## Develop
 
@@ -44,7 +66,10 @@ src/
   model/weekModel.ts      pure logic: hours parsing/formatting, day summaries (status bar)
   model/weekViewModel.ts  pure: the JSON the grid renders (rows, cells, day columns, progress)
   state/weekStore.ts      current week, view state, navigation, serialised saves/deletes
-  data/                   WeekRepository interface + mock and disconnected implementations
+  bridge/server.ts        the WebSocket server and handshake (no `vscode` import)
+  data/bridgeRepository.ts  the real data source: asks Chrome over the bridge (no `vscode` import)
+  data/mockWeekRepository.ts  fake data for UI work
+  data/weekRepository.ts  the interface both implement
   views/weekWebview.ts    hosts the grid (sidebar + editor tab), validates webview messages
   views/statusBar.ts      today/week hours in the status bar
   webview/main.ts         the grid itself — runs inside the webview (browser code)

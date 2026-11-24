@@ -82,6 +82,11 @@
         "title": "Open Week in Editor",
         "category": "NetSuite Tracker",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "netsuiteTracker.resetPairing",
+        "title": "Reset Pairing\u2026",
+        "category": "NetSuite Tracker"
       }
     ],
     "menus": {
@@ -110,6 +115,11 @@
           "command": "netsuiteTracker.openNetSuite",
           "when": "view == netsuiteTracker.week",
           "group": "1_connection@2"
+        },
+        {
+          "command": "netsuiteTracker.resetPairing",
+          "when": "view == netsuiteTracker.week",
+          "group": "1_connection@3"
         }
       ]
     },
@@ -136,8 +146,10 @@
   "devDependencies": {
     "@types/node": "^20.14.0",
     "@types/vscode": "1.90.0",
+    "@types/ws": "^8.18.2",
     "esbuild": "^0.25.0",
     "prettier": "^3.3.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "ws": "^8.23.0"
   }
 }

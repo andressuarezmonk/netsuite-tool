@@ -4,6 +4,8 @@ import { buildPairingCode } from "@/pairing";
 import type { WeekStore } from "@/state/weekStore";
 import { logHours } from "./hoursCommands";
 
+const RESET_ACTION = "Reset";
+
 interface CommandDependencies {
   store: WeekStore;
   pairingStore: PairingStore;
@@ -39,6 +41,21 @@ export function registerCommands(
     void vscode.window.showInformationMessage(
       "Pairing code copied. Paste it into the NetSuite Fast Time Tracker popup in Chrome (VS Code section).",
     );
+  });
+
+  register("netsuiteTracker.resetPairing", async () => {
+    const chosenAction = await vscode.window.showWarningMessage(
+      "Reset pairing?",
+      {
+        modal: true,
+        detail:
+          "Chrome will be disconnected and you'll need to pair again with a new code.",
+      },
+      RESET_ACTION,
+    );
+    if (chosenAction !== RESET_ACTION) return;
+    await pairingStore.clearToken();
+    await onPairingChanged();
   });
 
   register("netsuiteTracker.openNetSuite", async () => {

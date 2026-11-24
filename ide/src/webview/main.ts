@@ -132,6 +132,15 @@ function renderNotReady(current: WeekViewModel | null): string {
           { label: "Copy pairing code", command: "pair" },
         ],
       );
+    case "portInUse":
+      return renderMessageCard(
+        "Port already in use",
+        "Chrome connects to a local port, and something else is using it — often another VS Code window (only one can be connected at a time). Close the other one, or choose a different port in settings and pair again.",
+        [
+          { label: "Retry", command: "refresh" },
+          { label: "Open settings", command: "openSettings" },
+        ],
+      );
     case "sessionExpired":
       return renderMessageCard(
         "NetSuite session expired",

@@ -10,7 +10,8 @@ export type ExtensionToWebview =
   | { type: "saved"; cellKey: string; wasSuccessful: boolean };
 
 export type NavigationTarget = "previous" | "next" | "current";
-export type WebviewCommand = "pair" | "openNetSuite" | "refresh";
+export type WebviewCommand =
+  "pair" | "openNetSuite" | "refresh" | "openSettings";
 
 export type WebviewToExtension =
   | { type: "ready" }

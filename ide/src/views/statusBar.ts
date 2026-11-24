@@ -11,6 +11,7 @@ import { todayISO } from "@/utils/dates";
 const HIDDEN_STATES: readonly ViewState[] = [
   "notPaired",
   "waiting",
+  "portInUse",
   "sessionExpired",
   "notConfigured",
 ];

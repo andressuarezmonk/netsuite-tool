@@ -7,16 +7,22 @@ const TOKEN_BYTES = 24;
 
 /** Keeps the pairing token in VS Code's SecretStorage (OS keychain). */
 export interface PairingStore {
-  hasToken(): Promise<boolean>;
+  /** The token, or undefined when not paired. */
+  getToken(): Promise<string | undefined>;
   getOrCreateToken(): Promise<string>;
+  clearToken(): Promise<void>;
 }
 
 export function createPairingStore(
   secrets: vscode.SecretStorage,
 ): PairingStore {
   return {
-    async hasToken() {
-      return (await secrets.get(SECRET_KEY_TOKEN)) !== undefined;
+    getToken() {
+      return Promise.resolve(secrets.get(SECRET_KEY_TOKEN));
+    },
+
+    async clearToken() {
+      await secrets.delete(SECRET_KEY_TOKEN);
     },
 
     async getOrCreateToken() {

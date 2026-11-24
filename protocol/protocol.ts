@@ -28,6 +28,9 @@ export const KEEPALIVE_INTERVAL_MS = 20_000;
 export const CLOSE_CODE_UNAUTHORIZED = 4001; // server -> chrome: bad clientProof
 export const CLOSE_CODE_INCOMPATIBLE = 4002; // either side: protocol mismatch
 export const CLOSE_CODE_SERVER_NOT_VERIFIED = 4003; // chrome -> server: bad serverProof
+// server -> chrome: authenticated, but another browser is already connected.
+// Chrome treats it like any drop and retries later, taking over once the other leaves.
+export const CLOSE_CODE_BUSY = 4004;
 
 // ── Pairing ──────────────────────────────────────────────────────────────────
 // The user copies a single pairing code from VS Code and pastes it into the

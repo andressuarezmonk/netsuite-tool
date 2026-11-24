@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { registerCommands } from "@/commands";
-import { createDisconnectedRepository } from "@/data/disconnectedRepository";
+import { createBridgeRepository } from "@/data/bridgeRepository";
 import { createMockWeekRepository } from "@/data/mockWeekRepository";
 import type { WeekRepository } from "@/data/weekRepository";
-import { createPairingStore } from "@/pairing";
+import { createPairingStore, getConfiguredPort } from "@/pairing";
 import { WeekStore } from "@/state/weekStore";
 import { createStatusBar } from "@/views/statusBar";
 import { WEEK_VIEW_ID, WeekWebviewController } from "@/views/weekWebview";
@@ -29,10 +29,22 @@ export async function activate(
   if (isMockMode) {
     repository = createMockWeekRepository();
   } else {
-    const disconnectedRepository =
-      await createDisconnectedRepository(pairingStore);
-    repository = disconnectedRepository;
-    onPairingChanged = () => disconnectedRepository.refreshPairingState();
+    const bridgeRepository = createBridgeRepository({
+      getToken: () => pairingStore.getToken(),
+      getPort: getConfiguredPort,
+    });
+    repository = bridgeRepository;
+    onPairingChanged = () => bridgeRepository.refresh();
+    context.subscriptions.push(
+      bridgeRepository,
+      // A new port needs a new listener (and a new pairing code for Chrome)
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration("netsuiteTracker.port")) {
+          void bridgeRepository.restart();
+        }
+      }),
+    );
+    await bridgeRepository.refresh();
   }
 
   const weekStore = new WeekStore(repository);

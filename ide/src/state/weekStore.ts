@@ -164,7 +164,7 @@ export class WeekStore implements vscode.Disposable {
     this.setViewState("error");
   }
 
-  private showWithoutWeek(state: "notPaired" | "waiting"): void {
+  private showWithoutWeek(state: "notPaired" | "waiting" | "portInUse"): void {
     this.week = null;
     this.setViewState(state);
   }

@@ -19,6 +19,7 @@ export type ViewState =
   | "ready"
   | "notPaired"
   | "waiting"
+  | "portInUse"
   | "sessionExpired"
   | "notConfigured"
   | "error";

@@ -1,4 +1,4 @@
-import type * as vscode from "vscode";
+import type { Event } from "@/utils/events";
 import type {
   BridgeErrorCode,
   DeleteRowParams,
@@ -10,6 +10,7 @@ import type {
 export type RepositoryStatus =
   | "notPaired" // no pairing token yet
   | "waiting" // paired, but Chrome isn't connected
+  | "portInUse" // can't listen: another program or VS Code window has the port
   | "connected";
 
 export type RepositoryErrorCode = BridgeErrorCode | "NOT_CONNECTED";
@@ -30,7 +31,7 @@ export class RepositoryError extends Error {
  */
 export interface WeekRepository {
   readonly status: RepositoryStatus;
-  readonly onDidChangeStatus: vscode.Event<RepositoryStatus>;
+  readonly onDidChangeStatus: Event<RepositoryStatus>;
   /** The NetSuite account Chrome is using, once known. */
   readonly accountOrigin: string | null;
   getWeek(mondayISO: string): Promise<WeekResult>;

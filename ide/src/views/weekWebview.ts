@@ -25,6 +25,7 @@ const WEBVIEW_COMMANDS: readonly WebviewCommand[] = [
   "pair",
   "openNetSuite",
   "refresh",
+  "openSettings",
 ];
 const DELETE_ACTION = "Delete";
 
@@ -167,9 +168,16 @@ export class WeekWebviewController
         }
         return;
       case "command":
-        await vscode.commands.executeCommand(
-          `netsuiteTracker.${message.command}`,
-        );
+        if (message.command === "openSettings") {
+          await vscode.commands.executeCommand(
+            "workbench.action.openSettings",
+            "netsuiteTracker.port",
+          );
+        } else {
+          await vscode.commands.executeCommand(
+            `netsuiteTracker.${message.command}`,
+          );
+        }
         return;
     }
   }
