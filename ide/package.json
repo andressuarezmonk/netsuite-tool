@@ -30,37 +30,11 @@
       "netsuiteTracker": [
         {
           "id": "netsuiteTracker.week",
-          "name": "This Week"
+          "name": "This Week",
+          "type": "webview"
         }
       ]
     },
-    "viewsWelcome": [
-      {
-        "view": "netsuiteTracker.week",
-        "when": "netsuiteTracker.viewState == notPaired",
-        "contents": "Pair this extension with the NetSuite Fast Time Tracker Chrome extension to see and log your hours here.\n\n[Pair with Chrome](command:netsuiteTracker.pair)\n\nThen paste the copied code into the Chrome extension's popup."
-      },
-      {
-        "view": "netsuiteTracker.week",
-        "when": "netsuiteTracker.viewState == waiting",
-        "contents": "Waiting for Chrome…\n\nMake sure Chrome is open and the NetSuite Fast Time Tracker extension is paired.\n\n[Copy pairing code](command:netsuiteTracker.pair)\n\n[Retry](command:netsuiteTracker.refresh)"
-      },
-      {
-        "view": "netsuiteTracker.week",
-        "when": "netsuiteTracker.viewState == sessionExpired",
-        "contents": "Your NetSuite session expired.\n\nLog in to NetSuite again in your browser, then retry.\n\n[Open NetSuite](command:netsuiteTracker.openNetSuite)\n\n[Retry](command:netsuiteTracker.refresh)"
-      },
-      {
-        "view": "netsuiteTracker.week",
-        "when": "netsuiteTracker.viewState == notConfigured",
-        "contents": "The Chrome extension doesn't know your NetSuite account yet.\n\nOpen your NetSuite time entry page once in Chrome, then retry.\n\n[Retry](command:netsuiteTracker.refresh)"
-      },
-      {
-        "view": "netsuiteTracker.week",
-        "when": "netsuiteTracker.viewState == error",
-        "contents": "Couldn't load your hours.\n\n[Retry](command:netsuiteTracker.refresh)"
-      }
-    ],
     "commands": [
       {
         "command": "netsuiteTracker.pair",
@@ -93,19 +67,19 @@
       },
       {
         "command": "netsuiteTracker.logHours",
-        "title": "Log Hours…",
+        "title": "Log Hours\u2026",
         "category": "NetSuite Tracker",
         "icon": "$(add)"
       },
       {
-        "command": "netsuiteTracker.editHours",
-        "title": "Edit Hours",
-        "category": "NetSuite Tracker",
-        "icon": "$(edit)"
-      },
-      {
         "command": "netsuiteTracker.openNetSuite",
         "title": "Open NetSuite",
+        "category": "NetSuite Tracker",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "netsuiteTracker.openInEditor",
+        "title": "Open Week in Editor",
         "category": "NetSuite Tracker",
         "icon": "$(link-external)"
       }
@@ -118,24 +92,14 @@
           "group": "navigation@0"
         },
         {
-          "command": "netsuiteTracker.previousWeek",
-          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
+          "command": "netsuiteTracker.refresh",
+          "when": "view == netsuiteTracker.week",
           "group": "navigation@1"
         },
         {
-          "command": "netsuiteTracker.nextWeek",
-          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
-          "group": "navigation@2"
-        },
-        {
-          "command": "netsuiteTracker.currentWeek",
-          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
-          "group": "navigation@3"
-        },
-        {
-          "command": "netsuiteTracker.refresh",
+          "command": "netsuiteTracker.openInEditor",
           "when": "view == netsuiteTracker.week",
-          "group": "navigation@4"
+          "group": "navigation@2"
         },
         {
           "command": "netsuiteTracker.pair",
@@ -146,24 +110,6 @@
           "command": "netsuiteTracker.openNetSuite",
           "when": "view == netsuiteTracker.week",
           "group": "1_connection@2"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "netsuiteTracker.logHours",
-          "when": "view == netsuiteTracker.week && viewItem == day",
-          "group": "inline"
-        },
-        {
-          "command": "netsuiteTracker.editHours",
-          "when": "view == netsuiteTracker.week && viewItem == entry.editable",
-          "group": "inline"
-        }
-      ],
-      "commandPalette": [
-        {
-          "command": "netsuiteTracker.editHours",
-          "when": "false"
         }
       ]
     },
@@ -183,7 +129,7 @@
   "scripts": {
     "build": "node esbuild.mjs",
     "watch": "node esbuild.mjs --watch",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.webview.json",
     "format": "prettier --write \"src/**/*.ts\"",
     "format:check": "prettier --check \"src/**/*.ts\""
   },

@@ -1,6 +1,5 @@
 import * as vscode from "vscode";
 import type { BridgeDayKey } from "@protocol";
-import { RepositoryError } from "@/data/weekRepository";
 import {
   MAX_HOURS_PER_DAY,
   buildDaySummaries,
@@ -12,28 +11,10 @@ import {
 } from "@/model/weekModel";
 import type { WeekStore } from "@/state/weekStore";
 import { todayISO } from "@/utils/dates";
-import type { TreeNode } from "@/views/weekTreeProvider";
+import { reportOperationError } from "./errors";
 import { pickOne } from "./pickers";
 
-const OPEN_NETSUITE_ACTION = "Open NetSuite";
 const SEPARATOR = " › ";
-
-function showSaveError(error: unknown): void {
-  const message = error instanceof Error ? error.message : String(error);
-  const isSessionExpired =
-    error instanceof RepositoryError && error.code === "SESSION_EXPIRED";
-  if (isSessionExpired) {
-    void vscode.window
-      .showErrorMessage(message, OPEN_NETSUITE_ACTION)
-      .then((chosenAction) => {
-        if (chosenAction === OPEN_NETSUITE_ACTION) {
-          void vscode.commands.executeCommand("netsuiteTracker.openNetSuite");
-        }
-      });
-    return;
-  }
-  void vscode.window.showErrorMessage(`Couldn't save: ${message}`);
-}
 
 async function saveWithProgress(
   store: WeekStore,
@@ -47,7 +28,7 @@ async function saveWithProgress(
     );
     vscode.window.setStatusBarMessage(`$(check) ${successMessage}`, 3000);
   } catch (error) {
-    showSaveError(error);
+    reportOperationError(error);
   }
 }
 
@@ -61,15 +42,7 @@ function resolveReadyDays(store: WeekStore): DaySummary[] | null {
   return buildDaySummaries(store.week, todayISO());
 }
 
-async function pickDay(
-  days: DaySummary[],
-  targetNode: TreeNode | undefined,
-): Promise<DaySummary | undefined> {
-  if (targetNode?.kind === "day") return targetNode.day;
-  if (targetNode?.kind === "entry") {
-    return days.find((day) => day.dayKey === targetNode.entry.dayKey);
-  }
-
+async function pickDay(days: DaySummary[]): Promise<DaySummary | undefined> {
   const items = days.map((day) => ({
     label: day.label,
     description: day.totalHours > 0 ? formatHours(day.totalHours) : "",
@@ -86,15 +59,12 @@ async function pickDay(
 }
 
 /** "Log hours": adds time on top of whatever the day already has for a task. */
-export async function logHours(
-  store: WeekStore,
-  targetNode?: TreeNode,
-): Promise<void> {
+export async function logHours(store: WeekStore): Promise<void> {
   const days = resolveReadyDays(store);
   const week = store.week;
   if (!days || !week) return;
 
-  const day = await pickDay(days, targetNode);
+  const day = await pickDay(days);
   if (!day) return;
 
   const projectItems = [...week.projects]
@@ -192,44 +162,5 @@ export async function logHours(
       memo,
     },
     `Logged ${formatHours(hoursToAdd)} on ${day.label} — ${taskLabel}`,
-  );
-}
-
-/** "Edit hours": sets the exact total for one entry (0 records an explicit zero). */
-export async function editHours(
-  store: WeekStore,
-  targetNode?: TreeNode,
-): Promise<void> {
-  if (targetNode?.kind !== "entry") return;
-  const { entry, dayLabel } = targetNode;
-  if (entry.lockReason) {
-    void vscode.window.showWarningMessage(
-      `${entry.lockReason} entries can't be changed.`,
-    );
-    return;
-  }
-
-  const taskLabel = `${entry.projectName}${SEPARATOR}${entry.taskName}`;
-  const hoursText = await vscode.window.showInputBox({
-    title: "Edit hours",
-    prompt: `Total hours on ${dayLabel} — ${taskLabel}`,
-    value: String(entry.entry.hours),
-    validateInput: (text) =>
-      parseHoursInput(text) === null
-        ? "Enter hours like 2, 1.5 or 1:30 (0–24)."
-        : undefined,
-  });
-  const newHours = hoursText === undefined ? null : parseHoursInput(hoursText);
-  if (newHours === null) return;
-
-  await saveWithProgress(
-    store,
-    {
-      projectId: entry.projectId,
-      taskId: entry.taskId,
-      dayKey: entry.dayKey,
-      hours: newHours,
-    },
-    `Set ${dayLabel} — ${taskLabel} to ${formatHours(newHours)}`,
   );
 }

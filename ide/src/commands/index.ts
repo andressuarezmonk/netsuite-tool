@@ -2,19 +2,19 @@ import * as vscode from "vscode";
 import type { PairingStore } from "@/pairing";
 import { buildPairingCode } from "@/pairing";
 import type { WeekStore } from "@/state/weekStore";
-import type { TreeNode } from "@/views/weekTreeProvider";
-import { editHours, logHours } from "./hoursCommands";
+import { logHours } from "./hoursCommands";
 
 interface CommandDependencies {
   store: WeekStore;
   pairingStore: PairingStore;
   /** Called after a pairing code is created so the UI moves on from "not paired". */
   onPairingChanged: () => Promise<void>;
+  openInEditor: () => void;
 }
 
 export function registerCommands(
   context: vscode.ExtensionContext,
-  { store, pairingStore, onPairingChanged }: CommandDependencies,
+  { store, pairingStore, onPairingChanged, openInEditor }: CommandDependencies,
 ): void {
   const register = (
     commandId: string,
@@ -29,12 +29,8 @@ export function registerCommands(
   register("netsuiteTracker.nextWeek", () => store.goToRelativeWeek(1));
   register("netsuiteTracker.currentWeek", () => store.goToCurrentWeek());
 
-  register("netsuiteTracker.logHours", (node?: TreeNode) =>
-    logHours(store, node),
-  );
-  register("netsuiteTracker.editHours", (node?: TreeNode) =>
-    editHours(store, node),
-  );
+  register("netsuiteTracker.logHours", () => logHours(store));
+  register("netsuiteTracker.openInEditor", () => openInEditor());
 
   register("netsuiteTracker.pair", async () => {
     const pairingCode = await buildPairingCode(pairingStore);

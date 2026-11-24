@@ -1,5 +1,10 @@
 import type * as vscode from "vscode";
-import type { BridgeErrorCode, SetDayHoursParams, WeekResult } from "@protocol";
+import type {
+  BridgeErrorCode,
+  DeleteRowParams,
+  SetDayHoursParams,
+  WeekResult,
+} from "@protocol";
 
 /** Where the link to the Chrome extension stands. */
 export type RepositoryStatus =
@@ -30,4 +35,5 @@ export interface WeekRepository {
   readonly accountOrigin: string | null;
   getWeek(mondayISO: string): Promise<WeekResult>;
   setDayHours(params: SetDayHoursParams): Promise<WeekResult>;
+  deleteRow(params: DeleteRowParams): Promise<WeekResult>;
 }

@@ -1,7 +1,9 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2022"],
+    "lib": [
+      "ES2022"
+    ],
     "module": "ESNext",
     "moduleResolution": "bundler",
     "strict": true,
@@ -9,11 +11,23 @@
     "noUnusedParameters": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["node", "vscode"],
+    "types": [
+      "node",
+      "vscode"
+    ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@protocol": ["../protocol/protocol.ts"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@protocol": [
+        "../protocol/protocol.ts"
+      ]
     }
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/webview/main.ts"
+  ]
 }

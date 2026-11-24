@@ -3,15 +3,9 @@ import type { SetDayHoursParams, WeekResult } from "@protocol";
 import { RepositoryError, type WeekRepository } from "@/data/weekRepository";
 import { addDays, getMondayISO, todayISO } from "@/utils/dates";
 
-/** What the sidebar should show. Anything but "ready" shows a welcome view. */
-export type ViewState =
-  | "loading"
-  | "ready"
-  | "notPaired"
-  | "waiting"
-  | "sessionExpired"
-  | "notConfigured"
-  | "error";
+import type { ViewState } from "@/model/weekViewModel";
+
+export type { ViewState };
 
 const STALE_AFTER_MS = 60_000;
 const DAYS_PER_WEEK = 7;
@@ -21,6 +15,9 @@ export class WeekStore implements vscode.Disposable {
   private readonly statusSubscription: vscode.Disposable;
   private loadSequence = 0;
   private lastLoadedAt = 0;
+  // Saves and deletes run one at a time, so a response can never be built
+  // from a week that is missing an earlier, still-in-flight change.
+  private mutationQueue: Promise<unknown> = Promise.resolve();
 
   readonly onDidChange = this.changeEmitter.event;
 
@@ -90,15 +87,38 @@ export class WeekStore implements vscode.Disposable {
   }
 
   /** Saves a day's hours. Throws on failure so the caller can tell the user. */
-  async setDayHours(
-    params: Omit<SetDayHoursParams, "mondayISO">,
+  setDayHours(params: Omit<SetDayHoursParams, "mondayISO">): Promise<void> {
+    return this.runMutation((mondayISO) =>
+      this.repository.setDayHours({ ...params, mondayISO }),
+    );
+  }
+
+  /** Deletes the records behind a row. Throws on failure. */
+  deleteRow(timeids: string[]): Promise<void> {
+    return this.runMutation((mondayISO) =>
+      this.repository.deleteRow({ mondayISO, timeids }),
+    );
+  }
+
+  dispose(): void {
+    this.statusSubscription.dispose();
+    this.changeEmitter.dispose();
+  }
+
+  private runMutation(
+    mutation: (mondayISO: string) => Promise<WeekResult>,
+  ): Promise<void> {
+    const result = this.mutationQueue.then(() => this.applyMutation(mutation));
+    this.mutationQueue = result.catch(() => undefined);
+    return result;
+  }
+
+  private async applyMutation(
+    mutation: (mondayISO: string) => Promise<WeekResult>,
   ): Promise<void> {
     const requestedMondayISO = this.mondayISO;
     try {
-      const updatedWeek = await this.repository.setDayHours({
-        ...params,
-        mondayISO: requestedMondayISO,
-      });
+      const updatedWeek = await mutation(requestedMondayISO);
       this.rememberIfCurrentWeek(updatedWeek);
       // The user may have navigated to another week while this saved
       if (requestedMondayISO === this.mondayISO) this.applyWeek(updatedWeek);
@@ -112,11 +132,6 @@ export class WeekStore implements vscode.Disposable {
       }
       throw error;
     }
-  }
-
-  dispose(): void {
-    this.statusSubscription.dispose();
-    this.changeEmitter.dispose();
   }
 
   private applyWeek(loadedWeek: WeekResult): void {

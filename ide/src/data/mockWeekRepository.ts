@@ -5,13 +5,19 @@
 import * as vscode from "vscode";
 import type {
   BridgeDayKey,
+  DeleteRowParams,
   SetDayHoursParams,
   WeekResult,
   WireDayEntry,
   WireRow,
 } from "@protocol";
+import { DAY_KEYS } from "@/model/weekModel";
 import { getMondayISO, todayISO } from "@/utils/dates";
-import type { RepositoryStatus, WeekRepository } from "./weekRepository";
+import {
+  RepositoryError,
+  type RepositoryStatus,
+  type WeekRepository,
+} from "./weekRepository";
 
 const SIMULATED_LATENCY_MS = 250;
 
@@ -146,6 +152,28 @@ export function createMockWeekRepository(): WeekRepository {
           }),
         );
       }
+      return structuredClone(week);
+    },
+
+    async deleteRow(params: DeleteRowParams) {
+      await wait(SIMULATED_LATENCY_MS);
+      const week = getOrCreateWeek(params.mondayISO);
+      const requestedTimeids = new Set(params.timeids);
+      const affectedRows = week.rows.filter((row) =>
+        DAY_KEYS.some((dayKey) =>
+          requestedTimeids.has(row.days[dayKey]?.timeid ?? ""),
+        ),
+      );
+      const hasApprovedEntry = affectedRows.some((row) =>
+        DAY_KEYS.some((dayKey) => row.days[dayKey]?.approved),
+      );
+      if (hasApprovedEntry) {
+        throw new RepositoryError(
+          "BAD_REQUEST",
+          "That row has approved entries and can't be deleted.",
+        );
+      }
+      week.rows = week.rows.filter((row) => !affectedRows.includes(row));
       return structuredClone(week);
     },
   };

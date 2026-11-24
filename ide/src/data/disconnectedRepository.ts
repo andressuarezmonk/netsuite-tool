@@ -36,6 +36,7 @@ export async function createDisconnectedRepository(
     accountOrigin: null,
     getWeek: notConnected,
     setDayHours: notConnected,
+    deleteRow: notConnected,
 
     async refreshPairingState() {
       const nextStatus: RepositoryStatus = (await pairingStore.hasToken())

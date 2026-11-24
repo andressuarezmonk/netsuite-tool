@@ -19,7 +19,7 @@ export const DAY_KEYS: readonly BridgeDayKey[] = [
   "sun",
 ];
 
-const DAY_NAMES: Record<BridgeDayKey, string> = {
+export const DAY_NAMES: Record<BridgeDayKey, string> = {
   mon: "Mon",
   tue: "Tue",
   wed: "Wed",
@@ -42,7 +42,7 @@ export function roundHours(hours: number): number {
   return Math.round(hours * 100) / 100;
 }
 
-function sumHours(hoursList: number[]): number {
+export function sumHours(hoursList: number[]): number {
   let total = 0;
   hoursList.forEach((hours) => {
     total += hours;
@@ -56,11 +56,11 @@ export function formatHours(hours: number): string {
 }
 
 /**
- * Accepts "1.5", "1,5" and "1:30". Returns null for anything else or when the
+ * Accepts "1.5", "1,5", "1:30" and a trailing "h". Returns null for anything else or when the
  * value is outside 0–24.
  */
 export function parseHoursInput(text: string): number | null {
-  const trimmedText = text.trim();
+  const trimmedText = text.trim().replace(/h$/i, "").trim();
   const clockMatch = trimmedText.match(/^(\d{1,2}):([0-5]\d)$/);
   const decimalMatch = trimmedText.match(/^\d{1,2}([.,]\d{1,2})?$/);
 
