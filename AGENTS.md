@@ -4,7 +4,7 @@ Guidance for AI agents working on this codebase.
 
 ## Repository layout
 
-The repo is split in two. **Everything described in this file lives in `web/`** (the Chrome extension) — paths like `src/services/` mean `web/src/services/`, and all npm commands run from `web/`. `ide/` is a planned VS Code extension and is not scaffolded yet. `protocol/` holds the wire protocol both extensions speak (see "VS Code bridge" below). Repo-level files (`.github/`, `.husky/`, `scripts/`, `.nvmrc`) stay at the root.
+The repo is split in two. **Everything described in this file lives in `web/`** (the Chrome extension) — paths like `src/services/` mean `web/src/services/`, and all npm commands run from `web/`. `ide/` is the VS Code extension (its own `package.json`; see `ide/README.md` — it follows the same conventions: long names, no `any`, no `!`, `forEach` over `reduce`). `protocol/` holds the wire protocol both extensions speak (see "VS Code bridge" below). Repo-level files (`.github/`, `.husky/`, `scripts/`, `.nvmrc`) stay at the root.
 
 ## Verification commands
 

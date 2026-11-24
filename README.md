@@ -26,7 +26,8 @@ Click **download** to go to the releases page, grab the new `dist.zip`, extract 
 | Folder | What it is |
 |---|---|
 | [`web/`](web) | The Chrome extension (React + Vite). All build, lint and release tooling lives here. |
-| [`ide/`](ide) | The VS Code extension (planned, not scaffolded yet). |
+| [`ide/`](ide) | The VS Code extension: activity bar week view, log/edit hours. The real data link to Chrome is not built yet. |
+| [`protocol/`](protocol) | The wire protocol shared by both extensions. |
 | `scripts/` | Repo-level scripts (`deploy.sh`). |
 
 The commands below are run from `web/`.

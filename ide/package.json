@@ -1,0 +1,197 @@
+{
+  "name": "netsuite-fast-tracker-vscode",
+  "displayName": "NetSuite Fast Time Tracker",
+  "description": "See and log your NetSuite hours from VS Code",
+  "version": "0.0.1",
+  "private": true,
+  "publisher": "netsuite-fast-tracker",
+  "license": "UNLICENSED",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionKind": [
+    "ui"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "netsuiteTracker",
+          "title": "NetSuite Time",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "netsuiteTracker": [
+        {
+          "id": "netsuiteTracker.week",
+          "name": "This Week"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "netsuiteTracker.week",
+        "when": "netsuiteTracker.viewState == notPaired",
+        "contents": "Pair this extension with the NetSuite Fast Time Tracker Chrome extension to see and log your hours here.\n\n[Pair with Chrome](command:netsuiteTracker.pair)\n\nThen paste the copied code into the Chrome extension's popup."
+      },
+      {
+        "view": "netsuiteTracker.week",
+        "when": "netsuiteTracker.viewState == waiting",
+        "contents": "Waiting for Chrome…\n\nMake sure Chrome is open and the NetSuite Fast Time Tracker extension is paired.\n\n[Copy pairing code](command:netsuiteTracker.pair)\n\n[Retry](command:netsuiteTracker.refresh)"
+      },
+      {
+        "view": "netsuiteTracker.week",
+        "when": "netsuiteTracker.viewState == sessionExpired",
+        "contents": "Your NetSuite session expired.\n\nLog in to NetSuite again in your browser, then retry.\n\n[Open NetSuite](command:netsuiteTracker.openNetSuite)\n\n[Retry](command:netsuiteTracker.refresh)"
+      },
+      {
+        "view": "netsuiteTracker.week",
+        "when": "netsuiteTracker.viewState == notConfigured",
+        "contents": "The Chrome extension doesn't know your NetSuite account yet.\n\nOpen your NetSuite time entry page once in Chrome, then retry.\n\n[Retry](command:netsuiteTracker.refresh)"
+      },
+      {
+        "view": "netsuiteTracker.week",
+        "when": "netsuiteTracker.viewState == error",
+        "contents": "Couldn't load your hours.\n\n[Retry](command:netsuiteTracker.refresh)"
+      }
+    ],
+    "commands": [
+      {
+        "command": "netsuiteTracker.pair",
+        "title": "Pair with Chrome",
+        "category": "NetSuite Tracker"
+      },
+      {
+        "command": "netsuiteTracker.refresh",
+        "title": "Refresh",
+        "category": "NetSuite Tracker",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "netsuiteTracker.previousWeek",
+        "title": "Previous Week",
+        "category": "NetSuite Tracker",
+        "icon": "$(chevron-left)"
+      },
+      {
+        "command": "netsuiteTracker.nextWeek",
+        "title": "Next Week",
+        "category": "NetSuite Tracker",
+        "icon": "$(chevron-right)"
+      },
+      {
+        "command": "netsuiteTracker.currentWeek",
+        "title": "Go to Current Week",
+        "category": "NetSuite Tracker",
+        "icon": "$(calendar)"
+      },
+      {
+        "command": "netsuiteTracker.logHours",
+        "title": "Log Hours…",
+        "category": "NetSuite Tracker",
+        "icon": "$(add)"
+      },
+      {
+        "command": "netsuiteTracker.editHours",
+        "title": "Edit Hours",
+        "category": "NetSuite Tracker",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "netsuiteTracker.openNetSuite",
+        "title": "Open NetSuite",
+        "category": "NetSuite Tracker",
+        "icon": "$(link-external)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "netsuiteTracker.logHours",
+          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
+          "group": "navigation@0"
+        },
+        {
+          "command": "netsuiteTracker.previousWeek",
+          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
+          "group": "navigation@1"
+        },
+        {
+          "command": "netsuiteTracker.nextWeek",
+          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
+          "group": "navigation@2"
+        },
+        {
+          "command": "netsuiteTracker.currentWeek",
+          "when": "view == netsuiteTracker.week && netsuiteTracker.viewState == ready",
+          "group": "navigation@3"
+        },
+        {
+          "command": "netsuiteTracker.refresh",
+          "when": "view == netsuiteTracker.week",
+          "group": "navigation@4"
+        },
+        {
+          "command": "netsuiteTracker.pair",
+          "when": "view == netsuiteTracker.week",
+          "group": "1_connection@1"
+        },
+        {
+          "command": "netsuiteTracker.openNetSuite",
+          "when": "view == netsuiteTracker.week",
+          "group": "1_connection@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "netsuiteTracker.logHours",
+          "when": "view == netsuiteTracker.week && viewItem == day",
+          "group": "inline"
+        },
+        {
+          "command": "netsuiteTracker.editHours",
+          "when": "view == netsuiteTracker.week && viewItem == entry.editable",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "netsuiteTracker.editHours",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "NetSuite Tracker",
+      "properties": {
+        "netsuiteTracker.port": {
+          "type": "number",
+          "default": 8765,
+          "minimum": 1024,
+          "maximum": 65535,
+          "markdownDescription": "Local port the Chrome extension connects to. Pair again after changing it."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "1.90.0",
+    "esbuild": "^0.25.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.4.0"
+  }
+}

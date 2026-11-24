@@ -109,7 +109,7 @@ export function generateNonce(): string {
   return toHex(crypto.getRandomValues(new Uint8Array(NONCE_BYTES)));
 }
 
-async function importProofKey(token: string): Promise<CryptoKey> {
+async function importProofKey(token: string) {
   return crypto.subtle.importKey(
     "raw",
     textEncoder.encode(token),
