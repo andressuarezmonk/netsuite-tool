@@ -21,9 +21,20 @@ The extension checks for updates automatically on each page load. When a new ver
 
 Click **download** to go to the releases page, grab the new `dist.zip`, extract it, and reload the extension in `chrome://extensions` using the refresh icon. The whole process takes about 30 seconds.
 
+## Repository layout
+
+| Folder | What it is |
+|---|---|
+| [`web/`](web) | The Chrome extension (React + Vite). All build, lint and release tooling lives here. |
+| [`ide/`](ide) | The VS Code extension (planned, not scaffolded yet). |
+| `scripts/` | Repo-level scripts (`deploy.sh`). |
+
+The commands below are run from `web/`.
+
 ## Setup (for development)
 
 ```bash
+cd web
 npm install
 ```
 
@@ -54,6 +65,8 @@ npm run build
 - Caches week data in `chrome.storage.local` for instant loading on repeat visits (7-day TTL)
 
 ## Project structure
+
+Paths below are relative to `web/`.
 
 ```
 src/
@@ -122,6 +135,8 @@ src/
 ```
 
 ## Release pipeline
+
+The workflow runs inside `web/` (`working-directory: web`), so `package.json`, `.releaserc.json` and `dist.zip` all live there.
 
 Pushing a `feat:` or `fix:` commit to `main`/`master` triggers the GitHub Actions release workflow:
 

@@ -26,10 +26,10 @@ fi
 
 # ── 3. Local sanity build, so a broken build never even reaches CI ────────
 info "Running lint..."
-npm run lint
+npm --prefix web run lint
 
 info "Running build..."
-npm run build
+npm --prefix web run build
 
 # ── 4. Sync refs and make sure local develop matches origin/develop ───────
 info "Fetching latest refs from origin..."

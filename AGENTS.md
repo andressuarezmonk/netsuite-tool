@@ -2,9 +2,13 @@
 
 Guidance for AI agents working on this codebase.
 
+## Repository layout
+
+The repo is split in two. **Everything described in this file lives in `web/`** (the Chrome extension) — paths like `src/services/` mean `web/src/services/`, and all npm commands run from `web/`. `ide/` is a planned VS Code extension and is not scaffolded yet. Repo-level files (`.github/`, `.husky/`, `scripts/`, `.nvmrc`) stay at the root.
+
 ## Verification commands
 
-Always run these after making changes:
+Always run these from `web/` after making changes:
 
 ```bash
 # Type-check the entire project (zero errors expected)
