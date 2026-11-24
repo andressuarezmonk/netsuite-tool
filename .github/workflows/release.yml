@@ -37,21 +37,42 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx semantic-release
 
+      # semantic-release succeeds both when it releases and when there is
+      # nothing to release (only chore:/refactor:/(ide) commits). When it
+      # releases, the new `vX.Y.Z` tag ends up on HEAD (the version bump commit);
+      # when it doesn't, HEAD is untagged. Everything below that publishes
+      # something depends on this.
+      - name: Detect whether a release was just created
+        id: release
+        run: |
+          TAG=$(git tag --points-at HEAD | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n1 || true)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          if [[ -z "$TAG" ]]; then
+            echo "No release was created for this push: nothing will be zipped or uploaded."
+          else
+            echo "Released $TAG"
+          fi
+
       # Build after the version bump so dist/manifest.json reflects the new version.
+      # (Runs even without a release, as a check that master still builds.)
       - name: Build
         run: npm run build
 
+      # Never zip/upload without a new release: with no new tag, package.json
+      # still holds the PREVIOUS version, and `gh release upload --clobber`
+      # would silently replace that published release's zip with a build of
+      # newer, unreleased code.
       - name: Zip dist
+        if: steps.release.outputs.tag != ''
         run: zip -r dist.zip dist/
 
       # Upload dist.zip to the release that semantic-release just created.
       - name: Attach assets to release
+        if: steps.release.outputs.tag != ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          TAG="v$VERSION"
-          gh release upload "$TAG" dist.zip --clobber
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: gh release upload "$RELEASE_TAG" dist.zip --clobber
 
       # Merge the version bump commit that semantic-release pushed to master
       # back into develop so the two branches stay in sync.
