@@ -3,12 +3,16 @@
 # release workflow (lint -> semantic-release -> build -> dist.zip -> GitHub
 # Release -> sync version bump back to develop).
 #
-# Run via: npm run deploy
+# Run via: npm run deploy (from web/)
 
 set -euo pipefail
 
 info()  { echo "==> $*"; }
 error() { echo "ERROR: $*" >&2; }
+
+# Always run from the repo root, regardless of where it was invoked from
+# (`npm run deploy` runs it with web/ as the working directory).
+cd "$(git rev-parse --show-toplevel)"
 
 # ── 1. Must be on develop ──────────────────────────────────────────────────
 CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
