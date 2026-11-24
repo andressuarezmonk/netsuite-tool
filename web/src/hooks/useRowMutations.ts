@@ -6,6 +6,7 @@ import { CacheService } from "@/services/cache.service";
 import { SessionService } from "@/services/session.service";
 import { mergeWeekData } from "@/utils/merge";
 import { createKeyedAsyncDebounce } from "@/utils/debouncedAsync";
+import { findSavedDayEntry } from "@/utils/rows";
 import type { TimeRow, WeekData } from "@/utils/types";
 import { StatusKind } from "../constants/statusKind";
 import { StatusId } from "../constants/statusId";
@@ -204,21 +205,15 @@ export function useRowMutations({
             userId,
             defaultItemId,
           );
-          // Loop through all rows that match this project+task — NS may still
-          // have entries split across separate row blocks before the merge in
-          // week.service.ts has a chance to collapse them.
-          for (const candidateRow of preflightWeekData.rows) {
-            if (
-              candidateRow.projId === row.projId &&
-              candidateRow.taskId === row.taskId
-            ) {
-              const candidateTimeid = candidateRow.days[dayKey]?.timeid;
-              if (candidateTimeid) {
-                timeid = candidateTimeid;
-                break;
-              }
-            }
-          }
+          // Searches every row matching this project+task — NS may still have
+          // entries split across separate row blocks.
+          timeid =
+            findSavedDayEntry(
+              preflightWeekData.rows,
+              row.projId,
+              row.taskId,
+              dayKey,
+            )?.timeid ?? "";
         }
 
         await RowService.saveRow(

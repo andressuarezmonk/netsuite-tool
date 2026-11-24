@@ -12,6 +12,7 @@ import {
   buildReminderNotification,
   getNextReminderTime,
 } from "@/utils/reminder";
+import { initBridge } from "@/bridge/bridge.service";
 
 const ALARM_NAME = "ft_hours_reminder";
 const NOTIFICATION_ID = "ft_hours_reminder";
@@ -74,6 +75,8 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
 chrome.runtime.onMessage.addListener((message: { type?: string }) => {
   if (message.type === TEST_MESSAGE_TYPE) showReminder(true);
 });
+
+initBridge();
 
 chrome.runtime.onInstalled.addListener(() => {
   scheduleNextReminder();

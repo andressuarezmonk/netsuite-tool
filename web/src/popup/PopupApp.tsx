@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BridgePairing from "./BridgePairing";
 
 export default function PopupApp() {
   const [nsUrl, setNsUrl] = useState("");
@@ -60,6 +61,7 @@ export default function PopupApp() {
       >
         Open Time Entry
       </button>
+      <BridgePairing />
     </div>
   );
 }

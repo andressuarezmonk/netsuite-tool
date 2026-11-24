@@ -4,7 +4,7 @@ Guidance for AI agents working on this codebase.
 
 ## Repository layout
 
-The repo is split in two. **Everything described in this file lives in `web/`** (the Chrome extension) — paths like `src/services/` mean `web/src/services/`, and all npm commands run from `web/`. `ide/` is a planned VS Code extension and is not scaffolded yet. Repo-level files (`.github/`, `.husky/`, `scripts/`, `.nvmrc`) stay at the root.
+The repo is split in two. **Everything described in this file lives in `web/`** (the Chrome extension) — paths like `src/services/` mean `web/src/services/`, and all npm commands run from `web/`. `ide/` is a planned VS Code extension and is not scaffolded yet. `protocol/` holds the wire protocol both extensions speak (see "VS Code bridge" below). Repo-level files (`.github/`, `.husky/`, `scripts/`, `.nvmrc`) stay at the root.
 
 ## Verification commands
 
@@ -49,6 +49,7 @@ Own all I/O — HTTP calls, chrome storage, localStorage, and domain operations 
 
 - `connection.service.ts` — the NetSuite account in use (`origin` + handler URL). Window-free: the page sets it synchronously from its URL (via `readConnectionFromPage()` in `utils/pageConnection.ts`, content-script only), other contexts load the persisted copy from `chrome.storage`.
 - `apiClient.service.ts` — shared axios instance with no module-level URL; `resolveHandlerRequest(query)` resolves the endpoint per request. A response interceptor throws `SessionExpiredError` when NS answers with its login page (HTTP 200 + `text/html`, so the status code can't be trusted).
+- `bridgeSettings.service.ts` — persists the VS Code pairing settings (`bridge_settings`) and the live connection state (`bridge_status`) in `chrome.storage.local`, so the popup can show what the service worker is doing.
 - `fetch.service.ts` / `save.service.ts` / `delete.service.ts` — raw HTTP transport
 - `week.service.ts` — fetches 3 parallel NS week windows and merges them
 - `row.service.ts` — builds save/delete payloads and calls the transport layer
@@ -79,6 +80,7 @@ Update grouped state with spread: `setWeek(prev => ({ ...prev, weekData: fresh }
 - `useWeeklyTarget` — weekly target state wrapper around `TargetService`; called once in `HomePage` and passed as props to `WeekProgress` and `WeekGrid` so both stay in sync.
 - `useHoursSnapshot` — called once in `HomePage`; writes the current week's logged hours + target to `chrome.storage.local` so `background.ts` can build the reminder without calling NetSuite. Only the current week is recorded.
 - `useReminderSettings` — load/save wrapper around `ReminderService` settings; used by `ReminderBell`.
+- `useBridgePairing` — pairing settings + live connection state for the popup's `BridgePairing` (listens to `chrome.storage.onChanged`).
 - `useTheme` — light/dark state wrapper around `ThemeService`; used by `Footer` for the theme toggle.
 
 ### Theming (`src/styles/`)
@@ -95,7 +97,16 @@ Colour tokens in `_variables.scss` are `var(--ft-*)` references, **not** literal
 - `Footer` — calls `VersionService.check()` on mount; if `hasUpdate` is true, renders an update banner above the footer text. Also hosts the light/dark toggle (via `useTheme`). Self-contained — no store state involved.
 
 ### Background service worker (`src/background.ts`)
-Fires the opt-in hours reminder via `chrome.alarms` + `chrome.notifications`. It has no `window`, so it may only import window-free modules: use `@/utils/days`, `@/utils/dates`, `@/utils/reminder` and `@/services/reminder.service`. Never import the HTTP services or `apiClient.service` from it.
+Fires the opt-in hours reminder via `chrome.alarms` + `chrome.notifications`, and starts the VS Code bridge (`initBridge()`). It has no `window`, so everything it imports — transitively — must be window-free: `@/utils/days`, `@/utils/dates`, `@/utils/reminder`, `@/utils/rows`, `@/utils/guards`, `@/services/*` (including the HTTP services, which resolve their URL per request through `ConnectionService`) and `@/bridge/*`. Never import `utils/pageConnection.ts`, `SessionService`, `ThemeService`, `TargetService` or anything under `components/`, `hooks/`, `context/` or `pages/`. Register listeners synchronously at the top level — the worker is restarted by events.
+
+### VS Code bridge (`src/bridge/`, `/protocol`)
+Lets the planned VS Code extension (`ide/`) read and write hours through the browser's NetSuite session — no credentials ever leave Chrome.
+
+- `/protocol/protocol.ts` is the single source of truth for the wire format. It must stay dependency-free (no imports, no `window`/`chrome`/`vscode`), and is imported via the `@protocol` alias. It is compiled into each package separately; neither package ships the other. Changing a message shape means bumping `PROTOCOL_VERSION`.
+- `bridge/bridge.service.ts` owns the WebSocket. Chrome connects **out** to `ws://127.0.0.1:<port>` (a browser can't be dialed into) and keeps the worker alive with a 20s `keepalive`. A 30s `chrome.alarms` alarm reconnects after Chrome terminates the worker.
+- **Security model — never weaken this.** Any local program can listen on that port, so Chrome must not trust the server by default. The pairing token is never sent; both sides prove they know it with an HMAC handshake (`hello` → `challenge` → `auth` → `welcome`, see `protocol.ts`). Chrome verifies the server's proof *before* sending its own, and acts on no request until the stage is `ready`. Close codes 4001/4002 are only believed from a server that has proved itself (otherwise an impostor could disable the bridge by hanging up with them). A failed server proof sets state `untrusted` and retries only via the 30s alarm; a verified server's rejection is not retried until the user re-pairs. Any change to this flow needs the impostor cases (a server without the token must be unable to read data, change data, learn the token, or disable the bridge) re-verified. `connect()` is serialised through `requestConnect()` — always go through it, never call `connect()` directly.
+- `bridge/handlers.ts` maps requests onto the existing services (`loadWeek`, `RowService`, …). Keep NetSuite knowledge (date shift, merging, row collapsing) in those services, not here. It applies the same locking rules as the page (approved/submitted/disabled cells are read-only; rows with approved entries can't be deleted), reuses an existing `timeid` so saves update instead of duplicating, refreshes the page cache after every read/write, and maps failures to `BridgeErrorCode`s. Request params are untrusted JSON — validate every field.
+- Pairing: the VS Code extension generates a token and a pairing code (`nsft1.<port>.<token>`); the user pastes it into the popup (`popup/BridgePairing.tsx`).
 
 ### Mocks (`src/mocks/`)
 Development stubs for visual testing. Never imported in production code paths.

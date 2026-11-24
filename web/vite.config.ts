@@ -58,7 +58,10 @@ export default defineConfig({
     },
   ],
   resolve: {
-    alias: { '@': resolve(__dirname, 'src') },
+    alias: {
+      '@': resolve(__dirname, 'src'),
+      '@protocol': resolve(__dirname, '../protocol/protocol.ts'),
+    },
   },
   build: {
     outDir: 'dist',
