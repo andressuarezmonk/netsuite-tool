@@ -74,6 +74,8 @@ the `.vsix` (never as "latest"). To release Chrome and VS Code together use
 `npm run deploy:both` from the repo root. The version in `package.json` is a
 placeholder: CI stamps it from the tag.
 
+GitHub skips every workflow for a push whose latest commit says `[skip ci]`, tags included, and semantic-release's release commit says exactly that. So right after a Chrome release the script adds an empty `chore(ide): release X` commit and tags that, otherwise the release workflow would never start.
+
 Commits that only touch `ide/` must use the `(ide)` scope.
 
 ### Security model (server side)
